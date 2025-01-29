@@ -17,10 +17,14 @@ interface Reservation {
   created_at: string;
   date: string;
   table_type: string;
+  name: string;
+  email: string;
+  phone?: string;
+  special_requests?: string;
 }
 
 const AdminDashboard = () => {
-  const { data: reservations, isLoading } = useQuery({
+  const { data: reservations, isLoading, error } = useQuery({
     queryKey: ['reservations'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -28,10 +32,18 @@ const AdminDashboard = () => {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching reservations:', error);
+        throw error;
+      }
       return data as Reservation[];
     },
   });
+
+  if (error) {
+    console.error('Error in component:', error);
+    return <div className="p-8">Error loading reservations. Please try again later.</div>;
+  }
 
   return (
     <div className="min-h-screen bg-background p-8">
@@ -81,21 +93,25 @@ const AdminDashboard = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Email</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead>Table Type</TableHead>
-                    <TableHead>Created At</TableHead>
+                    <TableHead>Phone</TableHead>
+                    <TableHead>Special Requests</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {reservations?.map((reservation) => (
                     <TableRow key={reservation.id}>
+                      <TableCell>{reservation.name}</TableCell>
+                      <TableCell>{reservation.email}</TableCell>
                       <TableCell>
                         {new Date(reservation.date).toLocaleDateString()}
                       </TableCell>
                       <TableCell>{reservation.table_type}</TableCell>
-                      <TableCell>
-                        {new Date(reservation.created_at).toLocaleString()}
-                      </TableCell>
+                      <TableCell>{reservation.phone || 'N/A'}</TableCell>
+                      <TableCell>{reservation.special_requests || 'N/A'}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
