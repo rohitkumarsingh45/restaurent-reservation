@@ -1,69 +1,117 @@
-# Welcome to your Lovable project
 
-## Project info
+# Restaurant Reservation System
 
-**URL**: https://lovable.dev/projects/8739be74-7bae-4593-b02f-6a5a12d123e8
+## Local Development
 
-## How can I edit this code?
+1. Clone the repository:
+```bash
+git clone <your-repo-url>
+cd <your-repo-name>
+```
 
-There are several ways of editing your application.
+2. Install dependencies:
+```bash
+npm install
+```
 
-**Use Lovable**
+3. Set up environment variables:
+Create a `.env` file in the root directory with the following variables:
+```env
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/8739be74-7bae-4593-b02f-6a5a12d123e8) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+4. Start the development server:
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+The app will be available at `http://localhost:8080`
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Testing
 
-**Use GitHub Codespaces**
+Run the test suite:
+```bash
+npm test
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+Run tests in watch mode:
+```bash
+npm test:watch
+```
 
-## What technologies are used for this project?
+View test coverage:
+```bash
+npm test:coverage
+```
 
-This project is built with .
+## Deployment
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+### Option 1: Using Lovable (Recommended)
 
-## How can I deploy this project?
+1. Open your project in [Lovable](https://lovable.dev)
+2. Click on "Share" in the top navigation
+3. Click "Publish"
+4. Your app will be deployed automatically with all environment variables configured
 
-Simply open [Lovable](https://lovable.dev/projects/8739be74-7bae-4593-b02f-6a5a12d123e8) and click on Share -> Publish.
+### Option 2: Manual Deployment (e.g., Vercel, Netlify)
 
-## I want to use a custom domain - is that possible?
+#### Vercel
 
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+1. Push your code to a Git repository (GitHub, GitLab, or Bitbucket)
+2. Import your project in Vercel
+3. Configure environment variables in Vercel's dashboard:
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_ANON_KEY`
+4. Deploy!
+
+#### Netlify
+
+1. Push your code to a Git repository
+2. Import your project in Netlify
+3. Configure build settings:
+   - Build command: `npm run build`
+   - Publish directory: `dist`
+4. Add environment variables in Netlify's dashboard
+5. Deploy!
+
+## Build for Production
+
+To create a production build:
+
+```bash
+npm run build
+```
+
+This will create a `dist` directory with your compiled assets.
+
+## Error Handling
+
+The application implements comprehensive error handling:
+
+1. API Errors: All Supabase service calls are wrapped in try-catch blocks with appropriate error messages
+2. Form Validation: Input validation is performed before submission
+3. UI Feedback: Toast notifications inform users of success/failure
+4. Error Boundaries: React error boundaries catch and handle rendering errors
+
+## Project Structure
+
+```
+src/
+├── components/        # React components
+├── services/         # API and business logic
+├── lib/              # Utilities and helpers
+├── pages/            # Page components
+└── __tests__/        # Test files
+```
+
+## Contributing
+
+1. Create a feature branch
+2. Make your changes
+3. Write/update tests
+4. Submit a pull request
+
+## License
+
+MIT License - see LICENSE.md for details
