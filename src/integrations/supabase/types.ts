@@ -9,6 +9,57 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      menu_items: {
+        Row: {
+          active: boolean | null
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          name: string
+          price: number
+        }
+        Insert: {
+          active?: boolean | null
+          category: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          name: string
+          price: number
+        }
+        Update: {
+          active?: boolean | null
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          name?: string
+          price?: number
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          id: string
+          is_admin: boolean | null
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          is_admin?: boolean | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_admin?: boolean | null
+        }
+        Relationships: []
+      }
       reservations: {
         Row: {
           created_at: string
@@ -42,6 +93,27 @@ export type Database = {
         }
         Relationships: []
       }
+      table_types: {
+        Row: {
+          created_at: string
+          id: string
+          quantity: number
+          size: Database["public"]["Enums"]["table_size"]
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          quantity?: number
+          size: Database["public"]["Enums"]["table_size"]
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          quantity?: number
+          size?: Database["public"]["Enums"]["table_size"]
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -50,7 +122,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      table_size: "2-seater" | "4-seater" | "6-seater" | "8-seater"
     }
     CompositeTypes: {
       [_ in never]: never
