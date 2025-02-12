@@ -1,42 +1,45 @@
-import React from 'react';
+
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Utensils } from 'lucide-react';
-
-interface MenuItem {
-  name: string;
-  description: string;
-  price: number;
-  category: string;
-}
-
-const menuItems: MenuItem[] = [
-  {
-    name: "Grilled Salmon",
-    description: "Fresh Atlantic salmon with herbs and lemon butter sauce",
-    price: 28.99,
-    category: "Main Course"
-  },
-  {
-    name: "Beef Tenderloin",
-    description: "Premium cut served with roasted vegetables and red wine reduction",
-    price: 34.99,
-    category: "Main Course"
-  },
-  {
-    name: "Truffle Risotto",
-    description: "Creamy Arborio rice with wild mushrooms and truffle oil",
-    price: 24.99,
-    category: "Main Course"
-  },
-  {
-    name: "Caesar Salad",
-    description: "Crisp romaine, garlic croutons, parmesan, and classic dressing",
-    price: 12.99,
-    category: "Starters"
-  }
-];
+import { getMenuItems, MenuItem } from '@/services/menuService';
+import { useToast } from "@/components/ui/use-toast";
 
 const MenuSection = () => {
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchMenuItems = async () => {
+      try {
+        const items = await getMenuItems();
+        setMenuItems(items);
+      } catch (error) {
+        console.error('Error fetching menu items:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load menu items. Please try again later.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchMenuItems();
+  }, [toast]);
+
+  if (isLoading) {
+    return (
+      <section className="py-12 px-4">
+        <div className="max-w-4xl mx-auto text-center">
+          Loading menu items...
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="py-12 px-4">
       <div className="max-w-4xl mx-auto">
@@ -46,8 +49,8 @@ const MenuSection = () => {
         </div>
         
         <div className="grid gap-6 md:grid-cols-2">
-          {menuItems.map((item, index) => (
-            <Card key={index} className="menu-card">
+          {menuItems.map((item) => (
+            <Card key={item.id} className="menu-card">
               <CardHeader>
                 <CardTitle>{item.name}</CardTitle>
                 <CardDescription>{item.category}</CardDescription>
@@ -55,6 +58,13 @@ const MenuSection = () => {
               <CardContent>
                 <p className="text-muted-foreground mb-2">{item.description}</p>
                 <p className="font-semibold">${item.price.toFixed(2)}</p>
+                {item.image_url && (
+                  <img 
+                    src={item.image_url} 
+                    alt={item.name}
+                    className="mt-4 rounded-md w-full h-48 object-cover"
+                  />
+                )}
               </CardContent>
             </Card>
           ))}
