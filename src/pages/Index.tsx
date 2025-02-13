@@ -30,7 +30,7 @@ const Index = () => {
             <Button 
               variant="outline" 
               size="lg"
-              className="bg-primary hover:bg-primary/90 text-white border-primary"
+              className="bg-[#D946EF] hover:bg-[#8B5CF6] text-white border-none transition-colors duration-300"
               onClick={() => navigate('/reservation')}
             >
               Book a Table
