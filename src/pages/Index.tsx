@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -29,6 +30,7 @@ const Index = () => {
             <Button 
               variant="outline" 
               size="lg"
+              className="bg-primary hover:bg-primary/90 text-white border-primary"
               onClick={() => navigate('/reservation')}
             >
               Book a Table
