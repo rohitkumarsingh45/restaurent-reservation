@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import {
@@ -14,6 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, Users } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface Reservation {
   id: string;
@@ -24,11 +25,13 @@ interface Reservation {
   email: string;
   phone?: string;
   special_requests?: string;
+  status: 'pending' | 'accepted' | 'deleted';
 }
 
 const AdminDashboard = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState<'pending' | 'accepted' | 'deleted'>('pending');
 
   const { data: reservations, isLoading, error } = useQuery({
     queryKey: ['reservations'],
@@ -42,78 +45,56 @@ const AdminDashboard = () => {
         console.error('Error fetching reservations:', error);
         throw error;
       }
-      return data as Reservation[];
+      return (data as Reservation[]).map(r => ({
+        ...r,
+        status: r.status || 'pending'
+      }));
     },
   });
 
-  const deleteReservation = useMutation({
-    mutationFn: async (reservation: Reservation) => {
-      // First, send rejection email
-      await supabase.functions.invoke('send-reservation-email', {
-        body: {
-          customerEmail: reservation.email,
-          customerName: reservation.name,
-          date: reservation.date,
-          tableType: reservation.table_type,
-          status: 'rejected'
-        }
-      });
-
-      // Then delete the reservation
-      const { error } = await supabase
+  const updateReservationStatus = useMutation({
+    mutationFn: async ({ reservation, newStatus }: { reservation: Reservation, newStatus: 'accepted' | 'deleted' }) => {
+      // First, update the status in the database
+      const { error: updateError } = await supabase
         .from('reservations')
-        .delete()
+        .update({ status: newStatus })
         .eq('id', reservation.id);
 
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['reservations'] });
-      toast({
-        title: "Reservation Deleted",
-        description: "The reservation has been removed and the customer has been notified.",
-      });
-    },
-    onError: (error) => {
-      console.error('Error deleting reservation:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete the reservation. Please try again.",
-        variant: "destructive",
-      });
-    }
-  });
+      if (updateError) throw updateError;
 
-  const acceptReservation = useMutation({
-    mutationFn: async (reservation: Reservation) => {
+      // Then, send email notification
       await supabase.functions.invoke('send-reservation-email', {
         body: {
           customerEmail: reservation.email,
           customerName: reservation.name,
           date: reservation.date,
           tableType: reservation.table_type,
-          status: 'accepted'
+          status: newStatus === 'accepted' ? 'accepted' : 'rejected'
         }
       });
     },
-    onSuccess: () => {
+    onSuccess: (_, { newStatus }) => {
+      queryClient.invalidateQueries({ queryKey: ['reservations'] });
       toast({
-        title: "Reservation Accepted",
-        description: "A confirmation email has been sent to the customer.",
+        title: `Reservation ${newStatus === 'accepted' ? 'Accepted' : 'Deleted'}`,
+        description: newStatus === 'accepted' 
+          ? "A confirmation email has been sent to the customer."
+          : "The reservation has been removed and the customer has been notified.",
       });
     },
     onError: (error) => {
-      console.error('Error accepting reservation:', error);
+      console.error('Error updating reservation:', error);
       toast({
         title: "Error",
-        description: "Failed to send confirmation email. Please try again.",
+        description: "Failed to update the reservation. Please try again.",
         variant: "destructive",
       });
     }
   });
 
+  const filteredReservations = reservations?.filter(r => r.status === activeTab) || [];
+
   if (error) {
-    console.error('Error in component:', error);
     return <div className="p-8">Error loading reservations. Please try again later.</div>;
   }
 
@@ -156,59 +137,76 @@ const AdminDashboard = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>Recent Reservations</CardTitle>
+            <CardTitle>Reservations</CardTitle>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
-              <div className="text-center py-4">Loading...</div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Table Type</TableHead>
-                    <TableHead>Phone</TableHead>
-                    <TableHead>Special Requests</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {reservations?.map((reservation) => (
-                    <TableRow key={reservation.id}>
-                      <TableCell>{reservation.name}</TableCell>
-                      <TableCell>{reservation.email}</TableCell>
-                      <TableCell>
-                        {new Date(reservation.date).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>{reservation.table_type}</TableCell>
-                      <TableCell>{reservation.phone || 'N/A'}</TableCell>
-                      <TableCell>{reservation.special_requests || 'N/A'}</TableCell>
-                      <TableCell>
-                        <div className="flex space-x-2">
-                          <Button
-                            variant="default"
-                            className="bg-green-600 hover:bg-green-700"
-                            onClick={() => acceptReservation.mutate(reservation)}
-                            disabled={acceptReservation.isPending}
-                          >
-                            Accept
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            onClick={() => deleteReservation.mutate(reservation)}
-                            disabled={deleteReservation.isPending}
-                          >
-                            Delete
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
+            <Tabs defaultValue="pending" className="w-full" onValueChange={(value) => setActiveTab(value as any)}>
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="pending">Pending</TabsTrigger>
+                <TabsTrigger value="accepted">Accepted</TabsTrigger>
+                <TabsTrigger value="deleted">Deleted</TabsTrigger>
+              </TabsList>
+              <TabsContent value={activeTab}>
+                {isLoading ? (
+                  <div className="text-center py-4">Loading...</div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Table Type</TableHead>
+                        <TableHead>Phone</TableHead>
+                        <TableHead>Special Requests</TableHead>
+                        {activeTab === 'pending' && <TableHead>Actions</TableHead>}
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredReservations.map((reservation) => (
+                        <TableRow key={reservation.id}>
+                          <TableCell>{reservation.name}</TableCell>
+                          <TableCell>{reservation.email}</TableCell>
+                          <TableCell>
+                            {new Date(reservation.date).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell>{reservation.table_type}</TableCell>
+                          <TableCell>{reservation.phone || 'N/A'}</TableCell>
+                          <TableCell>{reservation.special_requests || 'N/A'}</TableCell>
+                          {activeTab === 'pending' && (
+                            <TableCell>
+                              <div className="flex space-x-2">
+                                <Button
+                                  variant="default"
+                                  className="bg-green-600 hover:bg-green-700"
+                                  onClick={() => updateReservationStatus.mutate({ 
+                                    reservation,
+                                    newStatus: 'accepted'
+                                  })}
+                                  disabled={updateReservationStatus.isPending}
+                                >
+                                  Accept
+                                </Button>
+                                <Button
+                                  variant="destructive"
+                                  onClick={() => updateReservationStatus.mutate({ 
+                                    reservation,
+                                    newStatus: 'deleted'
+                                  })}
+                                  disabled={updateReservationStatus.isPending}
+                                >
+                                  Delete
+                                </Button>
+                              </div>
+                            </TableCell>
+                          )}
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
       </div>
