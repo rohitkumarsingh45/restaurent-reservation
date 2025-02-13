@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import {
   Table,
@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, Users } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/use-toast";
 
 interface Reservation {
   id: string;
@@ -25,6 +27,9 @@ interface Reservation {
 }
 
 const AdminDashboard = () => {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
   const { data: reservations, isLoading, error } = useQuery({
     queryKey: ['reservations'],
     queryFn: async () => {
@@ -39,6 +44,72 @@ const AdminDashboard = () => {
       }
       return data as Reservation[];
     },
+  });
+
+  const deleteReservation = useMutation({
+    mutationFn: async (reservation: Reservation) => {
+      // First, send rejection email
+      await supabase.functions.invoke('send-reservation-email', {
+        body: {
+          customerEmail: reservation.email,
+          customerName: reservation.name,
+          date: reservation.date,
+          tableType: reservation.table_type,
+          status: 'rejected'
+        }
+      });
+
+      // Then delete the reservation
+      const { error } = await supabase
+        .from('reservations')
+        .delete()
+        .eq('id', reservation.id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['reservations'] });
+      toast({
+        title: "Reservation Deleted",
+        description: "The reservation has been removed and the customer has been notified.",
+      });
+    },
+    onError: (error) => {
+      console.error('Error deleting reservation:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete the reservation. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const acceptReservation = useMutation({
+    mutationFn: async (reservation: Reservation) => {
+      await supabase.functions.invoke('send-reservation-email', {
+        body: {
+          customerEmail: reservation.email,
+          customerName: reservation.name,
+          date: reservation.date,
+          tableType: reservation.table_type,
+          status: 'accepted'
+        }
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Reservation Accepted",
+        description: "A confirmation email has been sent to the customer.",
+      });
+    },
+    onError: (error) => {
+      console.error('Error accepting reservation:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send confirmation email. Please try again.",
+        variant: "destructive",
+      });
+    }
   });
 
   if (error) {
@@ -100,6 +171,7 @@ const AdminDashboard = () => {
                     <TableHead>Table Type</TableHead>
                     <TableHead>Phone</TableHead>
                     <TableHead>Special Requests</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -113,6 +185,25 @@ const AdminDashboard = () => {
                       <TableCell>{reservation.table_type}</TableCell>
                       <TableCell>{reservation.phone || 'N/A'}</TableCell>
                       <TableCell>{reservation.special_requests || 'N/A'}</TableCell>
+                      <TableCell>
+                        <div className="flex space-x-2">
+                          <Button
+                            variant="default"
+                            className="bg-green-600 hover:bg-green-700"
+                            onClick={() => acceptReservation.mutate(reservation)}
+                            disabled={acceptReservation.isPending}
+                          >
+                            Accept
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            onClick={() => deleteReservation.mutate(reservation)}
+                            disabled={deleteReservation.isPending}
+                          >
+                            Delete
+                          </Button>
+                        </div>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
