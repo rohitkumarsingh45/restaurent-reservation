@@ -18,10 +18,11 @@ export const getTableTypes = async (): Promise<TableType[]> => {
     throw tableError;
   }
 
-  // Get current reservations
+  // Get current active reservations (not deleted)
   const { data: reservations, error: reservationsError } = await supabase
     .from('reservations')
-    .select('table_type');
+    .select('table_type')
+    .in('status', ['pending', 'accepted']); // Only count pending and accepted reservations
 
   if (reservationsError) {
     console.error('Error fetching reservations:', reservationsError);
