@@ -2,41 +2,88 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { Star, MapPin, Phone, Mail } from 'lucide-react';
+import { Star, MapPin, Phone, Mail, Utensils, Clock, Calendar } from 'lucide-react';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 
 const Index = () => {
   const navigate = useNavigate();
 
+  const carouselImages = [
+    {
+      url: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80",
+      title: "Fine Dining Experience",
+      description: "Exquisite cuisine in an elegant atmosphere"
+    },
+    {
+      url: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80",
+      title: "Culinary Excellence",
+      description: "Our chefs create masterpieces with every dish"
+    },
+    {
+      url: "https://images.unsplash.com/photo-1559339352-11d035aa65de?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1274&q=80",
+      title: "Memorable Gatherings",
+      description: "Perfect venue for celebrations and special occasions"
+    },
+    {
+      url: "https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80",
+      title: "Seasonal Inspirations",
+      description: "Fresh ingredients showcased in seasonal menus"
+    }
+  ];
+
   return (
     <div className="min-h-screen">
-      {/* Hero Section */}
-      <section className="relative h-[60vh] flex items-center justify-center" 
-               style={{
-                 backgroundImage: "linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80')",
-                 backgroundSize: 'cover',
-                 backgroundPosition: 'center'
-               }}>
-        <div className="text-center text-white">
-          <h1 className="text-5xl font-bold mb-4">La Belle Cuisine</h1>
-          <p className="text-xl mb-8">Experience Fine Dining at its Best</p>
-          <div className="space-x-4">
-            <Button 
-              variant="default" 
-              size="lg"
-              onClick={() => navigate('/menu')}
-            >
-              View Menu
-            </Button>
-            <Button 
-              variant="outline" 
-              size="lg"
-              className="bg-[#D946EF] hover:bg-[#8B5CF6] text-white border-none transition-colors duration-300"
-              onClick={() => navigate('/reservation')}
-            >
-              Book a Table
-            </Button>
+      {/* Carousel Banner */}
+      <section className="w-full">
+        <Carousel className="w-full">
+          <CarouselContent>
+            {carouselImages.map((image, index) => (
+              <CarouselItem key={index}>
+                <div className="relative h-[80vh] w-full">
+                  <div 
+                    className="absolute inset-0 bg-cover bg-center"
+                    style={{ backgroundImage: `url(${image.url})` }}
+                  >
+                    <div className="absolute inset-0 bg-black/40 flex flex-col justify-center items-center text-white">
+                      <h2 className="text-5xl font-bold mb-4 animate-fade-in">{image.title}</h2>
+                      <p className="text-xl mb-8 animate-fade-in">{image.description}</p>
+                      <div className="flex space-x-4 animate-fade-in">
+                        <Button 
+                          variant="default" 
+                          size="lg"
+                          onClick={() => navigate('/menu')}
+                          className="bg-white text-black hover:bg-white/90"
+                        >
+                          <Utensils className="mr-2" size={18} />
+                          View Menu
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="lg"
+                          className="border-white text-white hover:bg-white/20"
+                          onClick={() => navigate('/reservation')}
+                        >
+                          <Calendar className="mr-2" size={18} />
+                          Book a Table
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-10 flex gap-2">
+            <CarouselPrevious className="relative -left-0 bg-white/30 hover:bg-white/50 border-none text-white" />
+            <CarouselNext className="relative -right-0 bg-white/30 hover:bg-white/50 border-none text-white" />
           </div>
-        </div>
+        </Carousel>
       </section>
 
       {/* Reviews Section */}
