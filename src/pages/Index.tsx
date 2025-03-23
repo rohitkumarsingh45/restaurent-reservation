@@ -41,13 +41,13 @@ const Index = () => {
     <div className="min-h-screen">
       {/* Carousel Banner */}
       <section className="w-full">
-        <Carousel className="w-full">
+        <Carousel className="w-full" opts={{ loop: true, duration: 50 }}>
           <CarouselContent>
             {carouselImages.map((image, index) => (
               <CarouselItem key={index}>
                 <div className="relative h-[80vh] w-full">
                   <div 
-                    className="absolute inset-0 bg-cover bg-center"
+                    className="absolute inset-0 bg-cover bg-center transition-opacity duration-700 ease-in-out"
                     style={{ backgroundImage: `url(${image.url})` }}
                   >
                     <div className="absolute inset-0 bg-black/40 flex flex-col justify-center items-center text-white">
@@ -58,7 +58,7 @@ const Index = () => {
                           variant="default" 
                           size="lg"
                           onClick={() => navigate('/menu')}
-                          className="bg-white text-black hover:bg-white/90"
+                          className="bg-white text-black hover:bg-white/90 transition-colors duration-300"
                         >
                           <Utensils className="mr-2" size={18} />
                           View Menu
@@ -66,7 +66,7 @@ const Index = () => {
                         <Button 
                           variant="outline" 
                           size="lg"
-                          className="border-white text-white hover:bg-white/20"
+                          className="border-white text-white hover:bg-white/20 transition-colors duration-300"
                           onClick={() => navigate('/reservation')}
                         >
                           <Calendar className="mr-2" size={18} />
@@ -80,8 +80,8 @@ const Index = () => {
             ))}
           </CarouselContent>
           <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-10 flex gap-2">
-            <CarouselPrevious className="relative -left-0 bg-white/30 hover:bg-white/50 border-none text-white" />
-            <CarouselNext className="relative -right-0 bg-white/30 hover:bg-white/50 border-none text-white" />
+            <CarouselPrevious className="relative -left-0 bg-white/30 hover:bg-white/50 border-none text-white transition-colors duration-300" />
+            <CarouselNext className="relative -right-0 bg-white/30 hover:bg-white/50 border-none text-white transition-colors duration-300" />
           </div>
         </Carousel>
       </section>
