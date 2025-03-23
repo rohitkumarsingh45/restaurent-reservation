@@ -10,6 +10,7 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
+import Autoplay from 'embla-carousel-autoplay';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -37,16 +38,25 @@ const Index = () => {
     }
   ];
 
+  // Create autoplay plugin instance
+  const autoplayPlugin = React.useMemo(
+    () => 
+      Autoplay({
+        delay: 5000, // 5 seconds per slide
+        stopOnInteraction: true,
+        stopOnMouseEnter: true,
+      }),
+    []
+  );
+
   return (
     <div className="min-h-screen">
       {/* Carousel Banner */}
       <section className="w-full">
         <Carousel className="w-full" opts={{ 
           loop: true, 
-          duration: 400, 
-          autoplay: true,
-          delay: 5000, // 5 seconds per slide
-        }}>
+          duration: 400,
+        }} plugins={[autoplayPlugin]}>
           <CarouselContent>
             {carouselImages.map((image, index) => (
               <CarouselItem key={index}>
