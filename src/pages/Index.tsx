@@ -38,11 +38,11 @@ const Index = () => {
     }
   ];
 
-  // Create autoplay plugin instance
+  // Create autoplay plugin instance with 3 second delay
   const autoplayPlugin = React.useMemo(
     () => 
       Autoplay({
-        delay: 5000, // 5 seconds per slide
+        delay: 3000, // 3 seconds per slide
         stopOnInteraction: true,
         stopOnMouseEnter: true,
       }),
@@ -55,14 +55,14 @@ const Index = () => {
       <section className="w-full">
         <Carousel className="w-full" opts={{ 
           loop: true, 
-          duration: 400,
+          duration: 0, // Instant transition (0ms)
         }} plugins={[autoplayPlugin]}>
           <CarouselContent>
             {carouselImages.map((image, index) => (
               <CarouselItem key={index}>
                 <div className="relative h-[80vh] w-full">
                   <div 
-                    className="absolute inset-0 bg-cover bg-center transition-opacity duration-700 ease-in-out"
+                    className="absolute inset-0 bg-cover bg-center transition-opacity duration-0"
                     style={{ backgroundImage: `url(${image.url})` }}
                   >
                     <div className="absolute inset-0 bg-black/40 flex flex-col justify-center items-center text-white">
@@ -133,8 +133,18 @@ const Index = () => {
                 <Button 
                   onClick={() => navigate('/menu')} 
                   variant="default"
+                  className="bg-[#8B5CF6] hover:bg-[#7E69AB] text-white font-medium rounded-md transition-all duration-300 shadow-md hover:shadow-lg"
                 >
+                  <Utensils className="mr-2" size={18} />
                   Explore Our Menu
+                </Button>
+                <Button 
+                  onClick={() => navigate('/reservation')}
+                  variant="outline"
+                  className="border-[#8B5CF6] text-[#8B5CF6] hover:bg-[#8B5CF6]/10 font-medium rounded-md transition-all duration-300"
+                >
+                  <Calendar className="mr-2" size={18} />
+                  Book a Table
                 </Button>
               </div>
             </div>
