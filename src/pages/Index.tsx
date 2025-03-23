@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { Star, MapPin, Phone, Mail, Utensils, Clock, Calendar } from 'lucide-react';
+import { Star, MapPin, Phone, Mail, Utensils, Clock, Calendar, ChefHat, Award } from 'lucide-react';
 import {
   Carousel,
   CarouselContent,
@@ -41,7 +41,12 @@ const Index = () => {
     <div className="min-h-screen">
       {/* Carousel Banner */}
       <section className="w-full">
-        <Carousel className="w-full" opts={{ loop: true, duration: 50 }}>
+        <Carousel className="w-full" opts={{ 
+          loop: true, 
+          duration: 400, 
+          autoplay: true,
+          delay: 5000, // 5 seconds per slide
+        }}>
           <CarouselContent>
             {carouselImages.map((image, index) => (
               <CarouselItem key={index}>
@@ -84,6 +89,63 @@ const Index = () => {
             <CarouselNext className="relative -right-0 bg-white/30 hover:bg-white/50 border-none text-white transition-colors duration-300" />
           </div>
         </Carousel>
+      </section>
+
+      {/* Hero Section - Restaurant Introduction */}
+      <section className="py-20 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col md:flex-row items-center gap-12">
+            <div className="md:w-1/2">
+              <h2 className="text-4xl font-bold mb-6 text-primary">Welcome to La Belle Cuisine</h2>
+              <div className="flex items-center mb-4">
+                <Award className="w-6 h-6 text-yellow-500 mr-2" />
+                <span className="text-lg font-semibold">Award-Winning Fine Dining</span>
+              </div>
+              <p className="text-gray-700 mb-6 leading-relaxed">
+                Since 1998, La Belle Cuisine has been crafting extraordinary dining experiences 
+                that combine exquisite flavors, elegant ambiance, and impeccable service.
+                Our commitment to culinary excellence has made us a destination for food enthusiasts 
+                and a cherished venue for life's special moments.
+              </p>
+              <p className="text-gray-700 mb-8 leading-relaxed">
+                Our executive chef, Jean-Pierre Dubois, and his talented team create seasonal menus 
+                using the finest locally-sourced ingredients, blending classic techniques with 
+                innovative approaches to deliver unforgettable flavors and presentations.
+              </p>
+              <div className="flex gap-4">
+                <Button 
+                  onClick={() => navigate('/about')} 
+                  variant="outline" 
+                  className="border-primary text-primary hover:bg-primary/10"
+                >
+                  Our Story
+                </Button>
+                <Button 
+                  onClick={() => navigate('/menu')} 
+                  variant="default"
+                >
+                  Explore Our Menu
+                </Button>
+              </div>
+            </div>
+            <div className="md:w-1/2 relative">
+              <div className="rounded-2xl overflow-hidden shadow-2xl">
+                <img 
+                  src="https://images.unsplash.com/photo-1600565193348-f74bd3c7ccdf?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2070&q=80" 
+                  alt="Executive Chef and Team" 
+                  className="w-full h-[400px] object-cover"
+                />
+              </div>
+              <div className="absolute -bottom-6 -left-6 bg-primary/90 text-white p-4 rounded-lg shadow-lg max-w-[200px]">
+                <div className="flex items-center mb-2">
+                  <ChefHat className="w-5 h-5 mr-2" />
+                  <h4 className="font-semibold">Our Executive Chef</h4>
+                </div>
+                <p className="text-sm">Jean-Pierre Dubois, with 25 years of culinary expertise</p>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* Reviews Section */}
