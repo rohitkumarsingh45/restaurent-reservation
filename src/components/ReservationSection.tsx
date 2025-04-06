@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getTableTypes, TableType } from '@/services/tableService';
 import { createReservation } from '@/services/reservationService';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import MenuItemSelection, { SelectedMenuItem } from './MenuItemSelection';
 
 const ReservationSection = () => {
   const [date, setDate] = useState<Date | undefined>(new Date());
@@ -20,6 +22,8 @@ const ReservationSection = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tableTypes, setTableTypes] = useState<TableType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedMenuItems, setSelectedMenuItems] = useState<SelectedMenuItem[]>([]);
+  const [activeTab, setActiveTab] = useState("reservation");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -54,18 +58,25 @@ const ReservationSection = () => {
 
     setIsSubmitting(true);
     try {
-      await createReservation({
-        date: date.toISOString(),
-        table_type: selectedTable,
-        name,
-        email,
-        phone: phone || null,
-        special_requests: specialRequests || null,
-      });
+      await createReservation(
+        {
+          date: date.toISOString(),
+          table_type: selectedTable,
+          name,
+          email,
+          phone: phone || null,
+          special_requests: specialRequests || null,
+        },
+        selectedMenuItems.length > 0 ? selectedMenuItems : undefined
+      );
+
+      const menuItemsMessage = selectedMenuItems.length > 0
+        ? ` with ${selectedMenuItems.reduce((total, item) => total + item.quantity, 0)} pre-ordered items`
+        : '';
 
       toast({
         title: "Reservation Successful!",
-        description: `Your table has been reserved for ${date.toLocaleDateString()}`,
+        description: `Your table has been reserved for ${date.toLocaleDateString()}${menuItemsMessage}`,
       });
 
       // Reset form
@@ -75,6 +86,8 @@ const ReservationSection = () => {
       setEmail('');
       setPhone('');
       setSpecialRequests('');
+      setSelectedMenuItems([]);
+      setActiveTab("reservation");
     } catch (error) {
       console.error('Error creating reservation:', error);
       toast({
@@ -86,6 +99,12 @@ const ReservationSection = () => {
       setIsSubmitting(false);
     }
   };
+
+  const handleMenuItemsUpdate = (items: SelectedMenuItem[]) => {
+    setSelectedMenuItems(items);
+  };
+
+  const totalMenuItemsQuantity = selectedMenuItems.reduce((total, item) => total + item.quantity, 0);
 
   if (isLoading) {
     return (
@@ -108,89 +127,134 @@ const ReservationSection = () => {
         <Card className="reservation-card">
           <CardHeader>
             <CardTitle>Book Your Table</CardTitle>
-            <CardDescription>Select your preferred date and table type</CardDescription>
+            <CardDescription>Select your preferred date, table type, and optionally pre-order from our menu</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-6 md:grid-cols-2">
-              <div>
-                <h3 className="font-medium mb-3">Select Date</h3>
-                <Calendar
-                  mode="single"
-                  selected={date}
-                  onSelect={setDate}
-                  className="rounded-md border"
-                  disabled={(date) => date < new Date()}
-                />
-              </div>
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="grid w-full grid-cols-2 mb-6">
+                <TabsTrigger value="reservation">Reservation Details</TabsTrigger>
+                <TabsTrigger value="menu-items" className="relative">
+                  Pre-Order Menu
+                  {totalMenuItemsQuantity > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                      {totalMenuItemsQuantity}
+                    </span>
+                  )}
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="reservation" className="mt-0">
+                <div className="grid gap-6 md:grid-cols-2">
+                  <div>
+                    <h3 className="font-medium mb-3">Select Date</h3>
+                    <Calendar
+                      mode="single"
+                      selected={date}
+                      onSelect={setDate}
+                      className="rounded-md border"
+                      disabled={(date) => date < new Date()}
+                    />
+                  </div>
 
-              <div>
-                <h3 className="font-medium mb-3">Select Table Type</h3>
-                <div className="space-y-4">
-                  {tableTypes.map((table) => (
-                    <div
-                      key={table.id}
-                      className={`table-option ${selectedTable === table.size ? 'selected' : ''} p-4 rounded-lg border cursor-pointer hover:bg-accent transition-colors`}
-                      onClick={() => setSelectedTable(table.size)}
-                    >
-                      <div className="flex items-center gap-3">
-                        <Users className="w-5 h-5" />
-                        <div>
-                          <p className="font-medium">{table.size}</p>
-                          <p className="text-sm text-muted-foreground">Available: {table.quantity}</p>
+                  <div>
+                    <h3 className="font-medium mb-3">Select Table Type</h3>
+                    <div className="space-y-4">
+                      {tableTypes.map((table) => (
+                        <div
+                          key={table.id}
+                          className={`table-option ${selectedTable === table.size ? 'selected' : ''} p-4 rounded-lg border cursor-pointer hover:bg-accent transition-colors ${selectedTable === table.size ? 'bg-accent' : ''}`}
+                          onClick={() => setSelectedTable(table.size)}
+                        >
+                          <div className="flex items-center gap-3">
+                            <Users className="w-5 h-5" />
+                            <div>
+                              <p className="font-medium">{table.size}</p>
+                              <p className="text-sm text-muted-foreground">Available: {table.quantity}</p>
+                            </div>
+                          </div>
                         </div>
-                      </div>
+                      ))}
                     </div>
-                  ))}
+                  </div>
                 </div>
-              </div>
-            </div>
 
-            <div className="mt-6 space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Name *</Label>
-                  <Input
-                    id="name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Enter your name"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email *</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter your email"
-                    required
-                  />
-                </div>
-              </div>
+                <div className="mt-6 space-y-4">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="name">Name *</Label>
+                      <Input
+                        id="name"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="Enter your name"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email *</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="Enter your email"
+                        required
+                      />
+                    </div>
+                  </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone (optional)</Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="Enter your phone number"
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Phone (optional)</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="Enter your phone number"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="special-requests">Special Requests (optional)</Label>
+                    <Input
+                      id="special-requests"
+                      value={specialRequests}
+                      onChange={(e) => setSpecialRequests(e.target.value)}
+                      placeholder="Any special requests or dietary requirements?"
+                    />
+                  </div>
+                  
+                  <div className="pt-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => setActiveTab("menu-items")}
+                    >
+                      Continue to Pre-Order Menu
+                    </Button>
+                  </div>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="menu-items" className="mt-0">
+                <MenuItemSelection 
+                  selectedItems={selectedMenuItems}
+                  onUpdateSelectedItems={handleMenuItemsUpdate}
                 />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="special-requests">Special Requests (optional)</Label>
-                <Input
-                  id="special-requests"
-                  value={specialRequests}
-                  onChange={(e) => setSpecialRequests(e.target.value)}
-                  placeholder="Any special requests or dietary requirements?"
-                />
-              </div>
-            </div>
+                
+                <div className="mt-6 space-y-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full mb-2"
+                    onClick={() => setActiveTab("reservation")}
+                  >
+                    Back to Reservation Details
+                  </Button>
+                </div>
+              </TabsContent>
+            </Tabs>
 
             <Button 
               className="w-full mt-6" 

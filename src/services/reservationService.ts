@@ -1,5 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import { SelectedMenuItem } from "@/components/MenuItemSelection";
 
 export interface Reservation {
   date: string;
@@ -10,7 +11,10 @@ export interface Reservation {
   special_requests?: string | null;
 }
 
-export const createReservation = async (reservation: Reservation) => {
+export const createReservation = async (
+  reservation: Reservation, 
+  selectedMenuItems?: SelectedMenuItem[]
+) => {
   // First check if there's already a reservation for this table type at this time
   const { data: existingReservations, error: checkError } = await supabase
     .from('reservations')
@@ -37,6 +41,27 @@ export const createReservation = async (reservation: Reservation) => {
   if (error) {
     console.error('Error creating reservation:', error);
     throw error;
+  }
+
+  // If there are menu items selected, add them to the reservation_menu_items table
+  if (selectedMenuItems && selectedMenuItems.length > 0 && data) {
+    const reservationId = data.id;
+    
+    const menuItemsToInsert = selectedMenuItems.map(item => ({
+      reservation_id: reservationId,
+      menu_item_id: item.menuItem.id,
+      quantity: item.quantity
+    }));
+
+    const { error: menuItemError } = await supabase
+      .from('reservation_menu_items')
+      .insert(menuItemsToInsert);
+
+    if (menuItemError) {
+      console.error('Error adding menu items to reservation:', menuItemError);
+      // Consider what to do if menu items fail but reservation succeeds
+      // For now, we'll still return the reservation data
+    }
   }
 
   return data;
