@@ -53,9 +53,10 @@ export const createReservation = async (
       quantity: item.quantity
     }));
 
+    // Use type assertion to tell TypeScript this table exists
     const { error: menuItemError } = await supabase
-      .from('reservation_menu_items')
-      .insert(menuItemsToInsert);
+      .from('reservation_menu_items' as any)
+      .insert(menuItemsToInsert as any);
 
     if (menuItemError) {
       console.error('Error adding menu items to reservation:', menuItemError);
