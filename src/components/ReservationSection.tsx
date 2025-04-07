@@ -146,7 +146,7 @@ const ReservationSection = () => {
             />
 
             <Button 
-              className="w-full mt-6" 
+              className="w-full mt-6 bg-primary text-white hover:bg-primary/90" 
               size="lg"
               onClick={handleReservation}
               disabled={isSubmitting}

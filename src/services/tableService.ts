@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export interface TableType {
@@ -35,9 +34,20 @@ export const getTableTypes = async (): Promise<TableType[]> => {
     return acc;
   }, {});
 
-  // Adjust available quantities
-  return tableTypes.map(table => ({
-    ...table,
-    quantity: Math.max(0, table.quantity - (reservationCounts[table.size] || 0))
-  }));
+  // Create a map to deduplicate table types by size
+  const uniqueTableTypes = new Map();
+  
+  // Process each table type and keep only unique sizes
+  tableTypes.forEach(table => {
+    // If we haven't seen this size before, or if this table has more capacity than the existing one
+    if (!uniqueTableTypes.has(table.size) || uniqueTableTypes.get(table.size).quantity < table.quantity) {
+      uniqueTableTypes.set(table.size, {
+        ...table,
+        quantity: Math.max(0, table.quantity - (reservationCounts[table.size] || 0))
+      });
+    }
+  });
+
+  // Convert the Map values back to an array
+  return Array.from(uniqueTableTypes.values());
 };

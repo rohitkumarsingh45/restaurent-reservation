@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -95,7 +96,7 @@ const ReservationTabs: React.FC<ReservationTabsProps> = ({
           <Button
             type="button"
             variant="outline"
-            className="w-full mb-2"
+            className="w-full mb-2 border-primary text-primary hover:bg-primary/10"
             onClick={() => setActiveTab("reservation")}
           >
             Back to Reservation Details
