@@ -1,6 +1,6 @@
-
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import ReservationCalendar from './ReservationCalendar';
 import TableSelection from './TableSelection';
 import ReservationForm from './ReservationForm';
