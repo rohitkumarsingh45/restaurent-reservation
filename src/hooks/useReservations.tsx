@@ -111,6 +111,8 @@ export const useReservations = () => {
 
   const updateReservationStatus = useMutation({
     mutationFn: async ({ reservation, newStatus }: { reservation: Reservation, newStatus: 'accepted' | 'deleted' | 'expired' }) => {
+      console.log(`Updating reservation ${reservation.id} to status: ${newStatus}`);
+      
       // First, update the status in the database
       const { error: updateError } = await supabase
         .from('reservations')
@@ -130,8 +132,10 @@ export const useReservations = () => {
         }
       });
     },
-    onSuccess: (_, { newStatus }) => {
+    onSuccess: (_, { newStatus, reservation }) => {
+      console.log(`Successfully updated reservation to: ${newStatus}`);
       queryClient.invalidateQueries({ queryKey: ['reservations'] });
+      
       toast({
         title: `Reservation ${newStatus === 'accepted' ? 'Accepted' : newStatus === 'deleted' ? 'Deleted' : 'Expired'}`,
         description: newStatus === 'accepted' 
@@ -151,6 +155,7 @@ export const useReservations = () => {
     }
   });
 
+  // Filter reservations based on the active tab
   const filteredReservations = reservations?.filter(r => r.status === activeTab) || [];
 
   return {

@@ -43,6 +43,12 @@ export const ReservationsTable: React.FC<ReservationsTableProps> = ({
   isLoading,
   updateReservationStatus
 }) => {
+  const isPastDate = (dateString: string) => {
+    const reservationDate = new Date(dateString);
+    const currentDate = new Date();
+    return reservationDate < currentDate;
+  };
+
   if (isLoading) {
     return <div className="text-center py-4">Loading...</div>;
   }
@@ -86,7 +92,7 @@ export const ReservationsTable: React.FC<ReservationsTableProps> = ({
                 <TableCell>
                   <div className="flex space-x-2">
                     <Button
-                      variant="success"
+                      className="bg-green-600 hover:bg-green-700 text-white"
                       size="sm"
                       onClick={() => updateReservationStatus.mutate({ 
                         reservation,
@@ -112,17 +118,31 @@ export const ReservationsTable: React.FC<ReservationsTableProps> = ({
               )}
               {activeTab === 'accepted' && (
                 <TableCell>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => updateReservationStatus.mutate({ 
-                      reservation,
-                      newStatus: 'deleted'
-                    })}
-                    disabled={updateReservationStatus.isPending}
-                  >
-                    Cancel
-                  </Button>
+                  {isPastDate(reservation.date) ? (
+                    <Button
+                      className="bg-orange-500 hover:bg-orange-600 text-white"
+                      size="sm"
+                      onClick={() => updateReservationStatus.mutate({ 
+                        reservation,
+                        newStatus: 'expired'
+                      })}
+                      disabled={updateReservationStatus.isPending}
+                    >
+                      Mark Expired
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => updateReservationStatus.mutate({ 
+                        reservation,
+                        newStatus: 'deleted'
+                      })}
+                      disabled={updateReservationStatus.isPending}
+                    >
+                      Cancel
+                    </Button>
+                  )}
                 </TableCell>
               )}
             </TableRow>

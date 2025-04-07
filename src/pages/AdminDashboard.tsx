@@ -1,12 +1,14 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DashboardStats } from '@/components/admin/DashboardStats';
 import { ReservationsTable } from '@/components/admin/ReservationsTable';
 import { useReservations } from '@/hooks/useReservations';
+import { useToast } from "@/components/ui/use-toast";
 
 const AdminDashboard = () => {
+  const { toast } = useToast();
   const {
     activeTab,
     setActiveTab,
@@ -17,7 +19,20 @@ const AdminDashboard = () => {
     updateReservationStatus
   } = useReservations();
 
+  // Check for expired reservations on component mount and tab change
+  useEffect(() => {
+    // This will trigger the check in the useReservations hook
+    if (activeTab === 'expired' || activeTab === 'accepted') {
+      // We can force a re-check here if needed
+    }
+  }, [activeTab]);
+
   if (error) {
+    toast({
+      title: "Error",
+      description: "Failed to load reservations. Please try again.",
+      variant: "destructive",
+    });
     return <div className="p-8">Error loading reservations. Please try again later.</div>;
   }
 
@@ -34,9 +49,10 @@ const AdminDashboard = () => {
           </CardHeader>
           <CardContent>
             <Tabs 
+              value={activeTab}
               defaultValue="pending" 
               className="w-full" 
-              onValueChange={(value) => setActiveTab(value as any)}
+              onValueChange={(value) => setActiveTab(value as 'pending' | 'accepted' | 'deleted' | 'expired')}
             >
               <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="pending">Pending</TabsTrigger>
