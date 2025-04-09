@@ -35,17 +35,39 @@ export const useReservations = () => {
   // Auto-expire past reservations
   useEffect(() => {
     const handleExpiredReservations = async () => {
+      console.log("Checking for expired reservations...");
       const now = new Date().toISOString();
-      const { error } = await supabase
+      
+      // Get reservations that need to be expired
+      const { data: expiredReservationsData, error: checkError } = await supabase
         .from('reservations')
-        .update({ status: 'expired' })
+        .select('id')
         .lt('date', now)
         .in('status', ['pending', 'accepted']);
       
-      if (error) {
-        console.error('Error updating expired reservations:', error);
+      if (checkError) {
+        console.error('Error checking expired reservations:', checkError);
+        return;
+      }
+      
+      if (expiredReservationsData && expiredReservationsData.length > 0) {
+        console.log(`Found ${expiredReservationsData.length} reservations to expire`);
+        
+        // Update reservations to expired status
+        const { error } = await supabase
+          .from('reservations')
+          .update({ status: 'expired' })
+          .lt('date', now)
+          .in('status', ['pending', 'accepted']);
+        
+        if (error) {
+          console.error('Error updating expired reservations:', error);
+        } else {
+          console.log('Successfully expired reservations');
+          queryClient.invalidateQueries({ queryKey: ['reservations'] });
+        }
       } else {
-        queryClient.invalidateQueries({ queryKey: ['reservations'] });
+        console.log('No reservations to expire');
       }
     };
 
@@ -58,9 +80,11 @@ export const useReservations = () => {
     return () => clearInterval(interval);
   }, [queryClient]);
 
-  const { data: reservations, isLoading, error } = useQuery({
+  const { data: reservations, isLoading, error, refetch } = useQuery({
     queryKey: ['reservations'],
     queryFn: async () => {
+      console.log("Fetching all reservations...");
+      
       // First get all reservations
       const { data: reservationsData, error: reservationsError } = await supabase
         .from('reservations')
@@ -71,6 +95,8 @@ export const useReservations = () => {
         console.error('Error fetching reservations:', reservationsError);
         throw reservationsError;
       }
+
+      console.log(`Retrieved ${reservationsData?.length || 0} reservations`);
 
       // Get all reservation menu items
       const { data: menuItemsData, error: menuItemsError } = await supabase
@@ -110,7 +136,13 @@ export const useReservations = () => {
   });
 
   const updateReservationStatus = useMutation({
-    mutationFn: async ({ reservation, newStatus }: { reservation: Reservation, newStatus: 'accepted' | 'deleted' | 'expired' }) => {
+    mutationFn: async ({ 
+      reservation, 
+      newStatus 
+    }: { 
+      reservation: Reservation, 
+      newStatus: 'accepted' | 'deleted' | 'expired' 
+    }) => {
       console.log(`Updating reservation ${reservation.id} to status: ${newStatus}`);
       
       try {
@@ -151,6 +183,7 @@ export const useReservations = () => {
       console.log(`Successfully updated reservation to: ${newStatus}`, result);
       
       // Force refresh the data
+      refetch();
       queryClient.invalidateQueries({ queryKey: ['reservations'] });
       
       toast({
@@ -174,6 +207,9 @@ export const useReservations = () => {
 
   // Filter reservations based on the active tab
   const filteredReservations = reservations?.filter(r => r.status === activeTab) || [];
+  
+  console.log(`Active tab: ${activeTab}, Filtered reservations: ${filteredReservations.length}`);
+  console.log('Filtered reservations:', filteredReservations);
 
   return {
     activeTab,
@@ -182,6 +218,7 @@ export const useReservations = () => {
     filteredReservations,
     isLoading,
     error,
-    updateReservationStatus
+    updateReservationStatus,
+    refetch
   };
 };
