@@ -115,15 +115,18 @@ export const useReservations = () => {
       
       try {
         // First, update the status in the database
-        const { error: updateError } = await supabase
+        const { data, error: updateError } = await supabase
           .from('reservations')
           .update({ status: newStatus })
-          .eq('id', reservation.id);
+          .eq('id', reservation.id)
+          .select();
 
         if (updateError) {
           console.error('Error updating reservation status:', updateError);
           throw updateError;
         }
+
+        console.log('Update response:', data);
 
         // Then, send email notification (only for accepted or deleted)
         if (newStatus === 'accepted' || newStatus === 'deleted') {
@@ -138,14 +141,16 @@ export const useReservations = () => {
           });
         }
         
-        return { success: true };
+        return { success: true, data };
       } catch (error) {
         console.error('Error in updateReservationStatus:', error);
         throw error;
       }
     },
-    onSuccess: (_, { newStatus, reservation }) => {
-      console.log(`Successfully updated reservation to: ${newStatus}`);
+    onSuccess: (result, { newStatus }) => {
+      console.log(`Successfully updated reservation to: ${newStatus}`, result);
+      
+      // Force refresh the data
       queryClient.invalidateQueries({ queryKey: ['reservations'] });
       
       toast({
