@@ -97,6 +97,7 @@ export const useReservations = () => {
       }
 
       console.log(`Retrieved ${reservationsData?.length || 0} reservations`);
+      console.log('Raw reservations data:', JSON.stringify(reservationsData, null, 2));
 
       // Get all reservation menu items
       const { data: menuItemsData, error: menuItemsError } = await supabase
@@ -162,15 +163,20 @@ export const useReservations = () => {
 
         // Then, send email notification (only for accepted or deleted)
         if (newStatus === 'accepted' || newStatus === 'deleted') {
-          await supabase.functions.invoke('send-reservation-email', {
-            body: {
-              customerEmail: reservation.email,
-              customerName: reservation.name,
-              date: reservation.date,
-              tableType: reservation.table_type,
-              status: newStatus === 'accepted' ? 'accepted' : 'rejected'
-            }
-          });
+          try {
+            await supabase.functions.invoke('send-reservation-email', {
+              body: {
+                customerEmail: reservation.email,
+                customerName: reservation.name,
+                date: reservation.date,
+                tableType: reservation.table_type,
+                status: newStatus === 'accepted' ? 'accepted' : 'rejected'
+              }
+            });
+          } catch (emailError) {
+            console.error('Email sending failed but update was successful:', emailError);
+            // We don't throw here because the status update was successful
+          }
         }
         
         return { success: true, data };
@@ -182,7 +188,7 @@ export const useReservations = () => {
     onSuccess: (result, { newStatus }) => {
       console.log(`Successfully updated reservation to: ${newStatus}`, result);
       
-      // Force refresh the data
+      // Force refresh the data - Important to ensure UI reflects current state!
       refetch();
       queryClient.invalidateQueries({ queryKey: ['reservations'] });
       
@@ -209,7 +215,7 @@ export const useReservations = () => {
   const filteredReservations = reservations?.filter(r => r.status === activeTab) || [];
   
   console.log(`Active tab: ${activeTab}, Filtered reservations: ${filteredReservations.length}`);
-  console.log('Filtered reservations:', filteredReservations);
+  console.log('Filtered reservations:', JSON.stringify(filteredReservations, null, 2));
 
   return {
     activeTab,

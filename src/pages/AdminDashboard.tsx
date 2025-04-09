@@ -22,7 +22,7 @@ const AdminDashboard = () => {
 
   // Check for expired reservations on component mount and tab change
   useEffect(() => {
-    console.log(`Tab changed to: ${activeTab}`);
+    console.log(`AdminDashboard: Tab changed to: ${activeTab}`);
     // Refetch data when tab changes to ensure we have the latest data
     refetch();
   }, [activeTab, refetch]);
@@ -36,6 +36,11 @@ const AdminDashboard = () => {
     });
     return <div className="p-8">Error loading reservations. Please try again later.</div>;
   }
+
+  const handleTabChange = (value: string) => {
+    console.log(`Tab changing from ${activeTab} to ${value}`);
+    setActiveTab(value as 'pending' | 'accepted' | 'deleted' | 'expired');
+  };
 
   return (
     <div className="min-h-screen bg-background p-8">
@@ -53,7 +58,7 @@ const AdminDashboard = () => {
               value={activeTab}
               defaultValue="pending" 
               className="w-full" 
-              onValueChange={(value) => setActiveTab(value as 'pending' | 'accepted' | 'deleted' | 'expired')}
+              onValueChange={handleTabChange}
             >
               <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="pending">Pending</TabsTrigger>
