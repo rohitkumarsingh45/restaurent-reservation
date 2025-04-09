@@ -113,24 +113,36 @@ export const useReservations = () => {
     mutationFn: async ({ reservation, newStatus }: { reservation: Reservation, newStatus: 'accepted' | 'deleted' | 'expired' }) => {
       console.log(`Updating reservation ${reservation.id} to status: ${newStatus}`);
       
-      // First, update the status in the database
-      const { error: updateError } = await supabase
-        .from('reservations')
-        .update({ status: newStatus })
-        .eq('id', reservation.id);
+      try {
+        // First, update the status in the database
+        const { error: updateError } = await supabase
+          .from('reservations')
+          .update({ status: newStatus })
+          .eq('id', reservation.id);
 
-      if (updateError) throw updateError;
-
-      // Then, send email notification
-      await supabase.functions.invoke('send-reservation-email', {
-        body: {
-          customerEmail: reservation.email,
-          customerName: reservation.name,
-          date: reservation.date,
-          tableType: reservation.table_type,
-          status: newStatus === 'accepted' ? 'accepted' : 'rejected'
+        if (updateError) {
+          console.error('Error updating reservation status:', updateError);
+          throw updateError;
         }
-      });
+
+        // Then, send email notification (only for accepted or deleted)
+        if (newStatus === 'accepted' || newStatus === 'deleted') {
+          await supabase.functions.invoke('send-reservation-email', {
+            body: {
+              customerEmail: reservation.email,
+              customerName: reservation.name,
+              date: reservation.date,
+              tableType: reservation.table_type,
+              status: newStatus === 'accepted' ? 'accepted' : 'rejected'
+            }
+          });
+        }
+        
+        return { success: true };
+      } catch (error) {
+        console.error('Error in updateReservationStatus:', error);
+        throw error;
+      }
     },
     onSuccess: (_, { newStatus, reservation }) => {
       console.log(`Successfully updated reservation to: ${newStatus}`);
