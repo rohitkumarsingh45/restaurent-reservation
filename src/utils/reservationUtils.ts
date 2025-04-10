@@ -77,17 +77,29 @@ export const fetchReservations = async () => {
     throw menuItemsError;
   }
 
+  // Log menu items data to help debug structure
+  console.log('Menu items data sample:', menuItemsData.length > 0 ? JSON.stringify(menuItemsData[0], null, 2) : 'No menu items');
+
   // Combine the data
   return reservationsData.map((reservation) => {
     const reservationMenuItems = menuItemsData
       .filter((mi) => mi.reservation_id === reservation.id)
-      .map((mi) => ({
-        id: mi.menu_item_id,
-        // Fix: Access the nested menu_items object properly
-        name: mi.menu_items?.name,
-        price: mi.menu_items?.price,
-        quantity: mi.quantity
-      }));
+      .map((mi) => {
+        // Check the actual structure of menu_items
+        console.log(`Menu item structure for reservation ${reservation.id}:`, mi.menu_items);
+        
+        return {
+          id: mi.menu_item_id,
+          // Handle menu_items correctly based on whether it's an object or array
+          name: Array.isArray(mi.menu_items) 
+            ? mi.menu_items[0]?.name 
+            : mi.menu_items?.name,
+          price: Array.isArray(mi.menu_items) 
+            ? mi.menu_items[0]?.price 
+            : mi.menu_items?.price,
+          quantity: mi.quantity
+        };
+      });
 
     return {
       ...reservation,
