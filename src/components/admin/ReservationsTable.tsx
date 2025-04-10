@@ -50,7 +50,7 @@ export const ReservationsTable: React.FC<ReservationsTableProps> = ({
   };
 
   const handleStatusUpdate = (reservation: Reservation, newStatus: 'accepted' | 'deleted' | 'expired') => {
-    console.log(`Attempting to update reservation ${reservation.id} to ${newStatus}`);
+    console.log(`ReservationsTable: Updating reservation ${reservation.id} from ${reservation.status} to ${newStatus}`);
     updateReservationStatus.mutate({ 
       reservation,
       newStatus
@@ -60,6 +60,9 @@ export const ReservationsTable: React.FC<ReservationsTableProps> = ({
   if (isLoading) {
     return <div className="text-center py-4">Loading...</div>;
   }
+
+  console.log(`ReservationsTable: Rendering table with ${filteredReservations.length} reservations for ${activeTab} tab`);
+  console.log('Current filtered reservations:', filteredReservations);
 
   return (
     <Table>
