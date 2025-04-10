@@ -83,8 +83,9 @@ export const fetchReservations = async () => {
       .filter((mi) => mi.reservation_id === reservation.id)
       .map((mi) => ({
         id: mi.menu_item_id,
-        name: mi.menu_items.name,
-        price: mi.menu_items.price,
+        // Fix: Access the nested menu_items object properly
+        name: mi.menu_items?.name,
+        price: mi.menu_items?.price,
         quantity: mi.quantity
       }));
 
