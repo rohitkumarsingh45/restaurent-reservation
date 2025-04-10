@@ -126,8 +126,12 @@ export const updateReservationStatus = async ({
   newStatus: 'accepted' | 'deleted' | 'expired' 
 }) => {
   console.log(`Updating reservation ${reservation.id} to status: ${newStatus}`);
+  console.log('Current reservation state:', JSON.stringify(reservation, null, 2));
   
   try {
+    // Log the exact query we're about to execute
+    console.log(`Executing update query: UPDATE reservations SET status = '${newStatus}' WHERE id = '${reservation.id}'`);
+    
     // First, update the status in the database
     const { data, error: updateError } = await supabase
       .from('reservations')
@@ -140,17 +144,39 @@ export const updateReservationStatus = async ({
       throw updateError;
     }
 
-    console.log('Update response:', data);
+    console.log('Update response:', JSON.stringify(data, null, 2));
 
     // Check if status was actually updated
     if (!data || data.length === 0) {
       console.error('No reservation was updated, possible database issue');
-      throw new Error('Failed to update reservation status');
+      
+      // Let's verify if the reservation exists
+      const { data: checkData, error: checkError } = await supabase
+        .from('reservations')
+        .select('id, status')
+        .eq('id', reservation.id)
+        .single();
+      
+      if (checkError) {
+        console.error('Error checking reservation existence:', checkError);
+      } else {
+        console.log('Reservation check result:', checkData);
+      }
+      
+      throw new Error('Failed to update reservation status - no records were affected');
     }
 
     // Then, send email notification (only for accepted or deleted)
     if (newStatus === 'accepted' || newStatus === 'deleted') {
       try {
+        console.log('Sending email notification with payload:', {
+          customerEmail: reservation.email,
+          customerName: reservation.name,
+          date: reservation.date,
+          tableType: reservation.table_type,
+          status: newStatus === 'accepted' ? 'accepted' : 'rejected'
+        });
+        
         const emailResponse = await supabase.functions.invoke('send-reservation-email', {
           body: {
             customerEmail: reservation.email,
