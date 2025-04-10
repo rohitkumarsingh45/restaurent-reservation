@@ -127,37 +127,50 @@ export const updateReservationStatus = async ({
 }) => {
   console.log(`Updating reservation ${reservation.id} to status: ${newStatus}`);
   
-  // First, update the status in the database
-  const { data, error: updateError } = await supabase
-    .from('reservations')
-    .update({ status: newStatus })
-    .eq('id', reservation.id)
-    .select();
+  try {
+    // First, update the status in the database
+    const { data, error: updateError } = await supabase
+      .from('reservations')
+      .update({ status: newStatus })
+      .eq('id', reservation.id)
+      .select();
 
-  if (updateError) {
-    console.error('Error updating reservation status:', updateError);
-    throw updateError;
-  }
-
-  console.log('Update response:', data);
-
-  // Then, send email notification (only for accepted or deleted)
-  if (newStatus === 'accepted' || newStatus === 'deleted') {
-    try {
-      await supabase.functions.invoke('send-reservation-email', {
-        body: {
-          customerEmail: reservation.email,
-          customerName: reservation.name,
-          date: reservation.date,
-          tableType: reservation.table_type,
-          status: newStatus === 'accepted' ? 'accepted' : 'rejected'
-        }
-      });
-    } catch (emailError) {
-      console.error('Email sending failed but update was successful:', emailError);
-      // We don't throw here because the status update was successful
+    if (updateError) {
+      console.error('Error updating reservation status:', updateError);
+      throw updateError;
     }
+
+    console.log('Update response:', data);
+
+    // Check if status was actually updated
+    if (!data || data.length === 0) {
+      console.error('No reservation was updated, possible database issue');
+      throw new Error('Failed to update reservation status');
+    }
+
+    // Then, send email notification (only for accepted or deleted)
+    if (newStatus === 'accepted' || newStatus === 'deleted') {
+      try {
+        const emailResponse = await supabase.functions.invoke('send-reservation-email', {
+          body: {
+            customerEmail: reservation.email,
+            customerName: reservation.name,
+            date: reservation.date,
+            tableType: reservation.table_type,
+            status: newStatus === 'accepted' ? 'accepted' : 'rejected'
+          }
+        });
+        
+        console.log('Email response:', emailResponse);
+      } catch (emailError) {
+        console.error('Email sending failed but update was successful:', emailError);
+        // We don't throw here because the status update was successful
+      }
+    }
+    
+    return { success: true, data: data[0] };
+  } catch (error) {
+    console.error('Error in updateReservationStatus:', error);
+    throw error;
   }
-  
-  return { success: true, data };
 };

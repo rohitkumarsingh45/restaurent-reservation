@@ -42,9 +42,9 @@ export const useReservations = (): UseReservationsReturn => {
     onSuccess: (result, { newStatus }) => {
       console.log(`Successfully updated reservation to: ${newStatus}`, result);
       
-      // Force refresh the data - Important to ensure UI reflects current state!
-      refetch();
+      // Force refresh the data immediately after update
       queryClient.invalidateQueries({ queryKey: ['reservations'] });
+      setTimeout(() => refetch(), 500); // Add an additional refetch after a short delay
       
       toast({
         title: `Reservation ${newStatus === 'accepted' ? 'Accepted' : newStatus === 'deleted' ? 'Deleted' : 'Expired'}`,
