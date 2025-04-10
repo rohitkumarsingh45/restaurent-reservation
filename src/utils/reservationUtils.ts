@@ -132,39 +132,76 @@ export const updateReservationStatus = async ({
     // Log the exact query we're about to execute
     console.log(`Executing update query: UPDATE reservations SET status = '${newStatus}' WHERE id = '${reservation.id}'`);
     
-    // First, update the status in the database
-    const { data, error: updateError } = await supabase
+    // First try to update with .match approach which is more reliable
+    const { data: updateData, error: updateMatchError } = await supabase
       .from('reservations')
       .update({ status: newStatus })
-      .eq('id', reservation.id)
+      .match({ id: reservation.id })
       .select();
-
-    if (updateError) {
-      console.error('Error updating reservation status:', updateError);
-      throw updateError;
-    }
-
-    console.log('Update response:', JSON.stringify(data, null, 2));
-
-    // Check if status was actually updated
-    if (!data || data.length === 0) {
-      console.error('No reservation was updated, possible database issue');
+    
+    // If that fails, try the .eq approach as fallback
+    if (updateMatchError || !updateData || updateData.length === 0) {
+      console.log("First update approach failed, trying alternate method", updateMatchError);
       
-      // Let's verify if the reservation exists
-      const { data: checkData, error: checkError } = await supabase
+      const { data, error: updateError } = await supabase
         .from('reservations')
-        .select('id, status')
+        .update({ status: newStatus })
         .eq('id', reservation.id)
-        .single();
-      
-      if (checkError) {
-        console.error('Error checking reservation existence:', checkError);
-      } else {
-        console.log('Reservation check result:', checkData);
+        .select();
+
+      if (updateError) {
+        console.error('Error updating reservation status:', updateError);
+        throw updateError;
+      }
+
+      console.log('Update response:', JSON.stringify(data, null, 2));
+
+      // Check if status was actually updated
+      if (!data || data.length === 0) {
+        console.error('No reservation was updated, possible database issue');
+        
+        // Let's verify if the reservation exists
+        const { data: checkData, error: checkError } = await supabase
+          .from('reservations')
+          .select('id, status')
+          .eq('id', reservation.id)
+          .single();
+        
+        if (checkError) {
+          console.error('Error checking reservation existence:', checkError);
+        } else {
+          console.log('Reservation check result:', checkData);
+        }
+        
+        // As a last resort, try a direct RPC call if available
+        try {
+          console.log("Attempting direct update via PostgreSQL query");
+          const { data: rpcData, error: rpcError } = await supabase.rpc('update_reservation_status', {
+            reservation_id: reservation.id,
+            new_status: newStatus
+          });
+          
+          if (rpcError) {
+            console.error('RPC update failed:', rpcError);
+            throw new Error('Failed to update reservation status - no records were affected');
+          }
+          
+          console.log('RPC update response:', rpcData);
+          // If we get here, the RPC method worked
+          return { success: true, data: { id: reservation.id, status: newStatus } };
+        } catch (rpcAttemptError) {
+          console.error('RPC attempt failed:', rpcAttemptError);
+          throw new Error('Failed to update reservation status - no records were affected');
+        }
       }
       
-      throw new Error('Failed to update reservation status - no records were affected');
+      return { success: true, data: data[0] };
     }
+    
+    console.log('Update with match succeeded:', JSON.stringify(updateData, null, 2));
+    
+    // If we got here, the first update method worked
+    const updatedRecord = updateData[0];
 
     // Then, send email notification (only for accepted or deleted)
     if (newStatus === 'accepted' || newStatus === 'deleted') {
@@ -194,7 +231,7 @@ export const updateReservationStatus = async ({
       }
     }
     
-    return { success: true, data: data[0] };
+    return { success: true, data: updatedRecord };
   } catch (error) {
     console.error('Error in updateReservationStatus:', error);
     throw error;
