@@ -42,19 +42,23 @@ export const useReservations = (): UseReservationsReturn => {
     onSuccess: (result, { newStatus }) => {
       console.log(`Successfully updated reservation to: ${newStatus}`, result);
       
-      // Immediately invalidate the cache to trigger a refetch
+      // Invalidate the reservation cache
       queryClient.invalidateQueries({ queryKey: ['reservations'] });
       
-      // Force an immediate refetch
-      refetch().then(() => {
-        console.log('Refetch completed after status update');
+      // Force refetch to ensure UI is updated
+      const performRefetch = async () => {
+        console.log('Performing immediate refetch after successful update');
+        await refetch();
         
-        // Also do a delayed refetch to ensure we get the latest data
-        setTimeout(() => {
-          console.log('Performing delayed refetch to ensure data consistency');
-          refetch();
+        // Sometimes the first refetch might not catch the latest data due to replication lag
+        // Do another refetch with a small delay
+        setTimeout(async () => {
+          console.log('Performing delayed refetch for data consistency');
+          await refetch();
         }, 1000);
-      });
+      };
+      
+      performRefetch();
       
       toast({
         title: `Reservation ${newStatus === 'accepted' ? 'Accepted' : newStatus === 'deleted' ? 'Deleted' : 'Expired'}`,
@@ -79,7 +83,6 @@ export const useReservations = (): UseReservationsReturn => {
   const filteredReservations = reservations?.filter(r => r.status === activeTab) || [];
   
   console.log(`Active tab: ${activeTab}, Filtered reservations: ${filteredReservations.length}`);
-  console.log('Filtered reservations:', JSON.stringify(filteredReservations, null, 2));
 
   return {
     activeTab,

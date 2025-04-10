@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import { QueryClient } from '@tanstack/react-query';
 
@@ -59,7 +60,6 @@ export const fetchReservations = async () => {
   }
 
   console.log(`Retrieved ${reservationsData?.length || 0} reservations`);
-  console.log('Raw reservations data:', JSON.stringify(reservationsData, null, 2));
 
   // Get all reservation menu items
   const { data: menuItemsData, error: menuItemsError } = await supabase
@@ -76,17 +76,11 @@ export const fetchReservations = async () => {
     throw menuItemsError;
   }
 
-  // Log menu items data to help debug structure
-  console.log('Menu items data sample:', menuItemsData.length > 0 ? JSON.stringify(menuItemsData[0], null, 2) : 'No menu items');
-
   // Combine the data
   return reservationsData.map((reservation) => {
     const reservationMenuItems = menuItemsData
       .filter((mi) => mi.reservation_id === reservation.id)
       .map((mi) => {
-        // Check the actual structure of menu_items
-        console.log(`Menu item structure for reservation ${reservation.id}:`, mi.menu_items);
-        
         // Define a type-safe function to extract values
         const getMenuItemProperty = (menuItemsData: any, property: string): any => {
           if (!menuItemsData) return null;
@@ -115,7 +109,8 @@ export const fetchReservations = async () => {
 };
 
 /**
- * Updates a reservation's status using multiple fallback methods
+ * Updates a reservation's status using multiple methods in sequence
+ * until one succeeds
  */
 export const updateReservationStatus = async ({ 
   reservation, 
@@ -128,167 +123,119 @@ export const updateReservationStatus = async ({
   console.log('Current reservation state:', JSON.stringify(reservation, null, 2));
   
   try {
-    // First, try using the dedicated RPC function we created
-    console.log("Attempting update using the database function");
+    // Try multiple update methods in sequence until one succeeds
+    
+    // Method 1: Direct update with eq
+    console.log("Method 1: Attempting direct update with .eq");
+    const { data, error: updateError } = await supabase
+      .from('reservations')
+      .update({ status: newStatus })
+      .eq('id', reservation.id)
+      .select();
+
+    if (updateError) {
+      console.error('Method 1 failed:', updateError);
+    } else if (data && data.length > 0) {
+      console.log('Method 1 succeeded:', data);
+      
+      // Send email notification if appropriate
+      await sendEmailNotification(reservation, newStatus);
+      
+      return { success: true, data: data[0] };
+    } else {
+      console.log('Method 1: No records updated');
+    }
+    
+    // Method 2: Try using match
+    console.log("Method 2: Attempting update with .match");
+    const { data: matchData, error: matchError } = await supabase
+      .from('reservations')
+      .update({ status: newStatus })
+      .match({ id: reservation.id })
+      .select();
+    
+    if (matchError) {
+      console.error('Method 2 failed:', matchError);
+    } else if (matchData && matchData.length > 0) {
+      console.log('Method 2 succeeded:', matchData);
+      
+      // Send email notification if appropriate
+      await sendEmailNotification(reservation, newStatus);
+      
+      return { success: true, data: matchData[0] };
+    } else {
+      console.log('Method 2: No records updated');
+    }
+    
+    // Method 3: Try direct SQL via RPC
+    console.log("Method 3: Attempting update via RPC");
     const { data: rpcData, error: rpcError } = await supabase.rpc('update_reservation_status', {
       reservation_id: reservation.id,
       new_status: newStatus
     });
     
     if (rpcError) {
-      console.error('Database function update failed:', rpcError);
-      // Fall back to direct update methods
-    } else if (rpcData === true) {
-      console.log('Successfully updated reservation via database function');
-      
-      // Then, send email notification (only for accepted or deleted)
-      if (newStatus === 'accepted' || newStatus === 'deleted') {
-        try {
-          console.log('Sending email notification with payload:', {
-            customerEmail: reservation.email,
-            customerName: reservation.name,
-            date: reservation.date,
-            tableType: reservation.table_type,
-            status: newStatus === 'accepted' ? 'accepted' : 'rejected'
-          });
-          
-          const emailResponse = await supabase.functions.invoke('send-reservation-email', {
-            body: {
-              customerEmail: reservation.email,
-              customerName: reservation.name,
-              date: reservation.date,
-              tableType: reservation.table_type,
-              status: newStatus === 'accepted' ? 'accepted' : 'rejected'
-            }
-          });
-          
-          console.log('Email response:', emailResponse);
-        } catch (emailError) {
-          console.error('Email sending failed but update was successful:', emailError);
-          // We don't throw here because the status update was successful
-        }
-      }
-      
-      return { 
-        success: true, 
-        data: { 
-          ...reservation, 
-          status: newStatus 
-        } 
-      };
+      console.error('Method 3 failed:', rpcError);
     } else {
-      console.error('Database function returned false, reservation not found or not updated');
-    }
-    
-    // If RPC method fails or returns false, try direct updates
-    console.log("Attempting direct database update using .match");
-    const { data: updateData, error: updateMatchError } = await supabase
-      .from('reservations')
-      .update({ status: newStatus })
-      .match({ id: reservation.id })
-      .select();
-    
-    // If match approach fails, try eq approach
-    if (updateMatchError || !updateData || updateData.length === 0) {
-      console.log("Match update failed, trying .eq approach", updateMatchError);
+      console.log('Method 3 RPC result:', rpcData);
       
-      const { data, error: updateError } = await supabase
+      // Verify the update worked by checking the current status
+      const { data: verifyData, error: verifyError } = await supabase
         .from('reservations')
-        .update({ status: newStatus })
+        .select('id, status')
         .eq('id', reservation.id)
-        .select();
-
-      if (updateError) {
-        console.error('Error updating reservation status:', updateError);
-        throw updateError;
-      }
-
-      if (!data || data.length === 0) {
-        console.error('No reservation was updated, possible database issue');
-        
-        // Verify if the reservation exists
-        const { data: checkData, error: checkError } = await supabase
-          .from('reservations')
-          .select('id, status')
-          .eq('id', reservation.id)
-          .single();
-        
-        if (checkError) {
-          console.error('Error checking reservation existence:', checkError);
-        } else {
-          console.log('Reservation check result:', checkData);
-          if (checkData) {
-            // Reservation exists but couldn't be updated
-            console.error('Reservation exists but could not be updated');
-          }
-        }
-        
-        throw new Error('Failed to update reservation status - no records were affected');
-      }
+        .single();
       
-      // Send email notification for .eq update method
-      if (newStatus === 'accepted' || newStatus === 'deleted') {
-        try {
-          console.log('Sending email notification with payload:', {
-            customerEmail: reservation.email,
-            customerName: reservation.name,
-            date: reservation.date,
-            tableType: reservation.table_type,
-            status: newStatus === 'accepted' ? 'accepted' : 'rejected'
-          });
-          
-          const emailResponse = await supabase.functions.invoke('send-reservation-email', {
-            body: {
-              customerEmail: reservation.email,
-              customerName: reservation.name,
-              date: reservation.date,
-              tableType: reservation.table_type,
-              status: newStatus === 'accepted' ? 'accepted' : 'rejected'
-            }
-          });
-          
-          console.log('Email response:', emailResponse);
-        } catch (emailError) {
-          console.error('Email sending failed but update was successful:', emailError);
-        }
-      }
-      
-      return { success: true, data: data[0] };
-    }
-    
-    console.log('Update with match succeeded:', JSON.stringify(updateData, null, 2));
-    
-    // Send email notification for match update method
-    if (newStatus === 'accepted' || newStatus === 'deleted') {
-      try {
-        console.log('Sending email notification with payload:', {
-          customerEmail: reservation.email,
-          customerName: reservation.name,
-          date: reservation.date,
-          tableType: reservation.table_type,
-          status: newStatus === 'accepted' ? 'accepted' : 'rejected'
-        });
+      if (verifyError) {
+        console.error('Verification failed:', verifyError);
+      } else if (verifyData && verifyData.status === newStatus) {
+        console.log('Verification confirmed update:', verifyData);
         
-        const emailResponse = await supabase.functions.invoke('send-reservation-email', {
-          body: {
-            customerEmail: reservation.email,
-            customerName: reservation.name,
-            date: reservation.date,
-            tableType: reservation.table_type,
-            status: newStatus === 'accepted' ? 'accepted' : 'rejected'
-          }
-        });
+        // Send email notification if appropriate
+        await sendEmailNotification(reservation, newStatus);
         
-        console.log('Email response:', emailResponse);
-      } catch (emailError) {
-        console.error('Email sending failed but update was successful:', emailError);
+        return { success: true, data: verifyData };
+      } else {
+        console.log('Verification shows update did not take effect:', verifyData);
       }
     }
     
-    return { success: true, data: updateData[0] };
-    
+    // If we reach here, all methods failed
+    throw new Error('Failed to update reservation status - all update methods failed');
   } catch (error) {
     console.error('Error in updateReservationStatus:', error);
     throw error;
   }
 };
+
+/**
+ * Helper function to send email notifications
+ */
+async function sendEmailNotification(reservation: any, newStatus: 'accepted' | 'deleted' | 'expired') {
+  if (newStatus === 'accepted' || newStatus === 'deleted') {
+    try {
+      console.log('Sending email notification with payload:', {
+        customerEmail: reservation.email,
+        customerName: reservation.name,
+        date: reservation.date,
+        tableType: reservation.table_type,
+        status: newStatus === 'accepted' ? 'accepted' : 'rejected'
+      });
+      
+      const emailResponse = await supabase.functions.invoke('send-reservation-email', {
+        body: {
+          customerEmail: reservation.email,
+          customerName: reservation.name,
+          date: reservation.date,
+          tableType: reservation.table_type,
+          status: newStatus === 'accepted' ? 'accepted' : 'rejected'
+        }
+      });
+      
+      console.log('Email response:', emailResponse);
+    } catch (emailError) {
+      console.error('Email sending failed but update was successful:', emailError);
+      // We don't throw here because the status update was successful
+    }
+  }
+}

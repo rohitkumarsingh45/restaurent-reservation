@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { format } from 'date-fns';
 import { Button } from "@/components/ui/button";
 import {
@@ -43,6 +43,9 @@ export const ReservationsTable: React.FC<ReservationsTableProps> = ({
   isLoading,
   updateReservationStatus
 }) => {
+  // Track which reservations have pending actions
+  const [pendingActions, setPendingActions] = useState<Record<string, string>>({});
+  
   const isPastDate = (dateString: string) => {
     const reservationDate = new Date(dateString);
     const currentDate = new Date();
@@ -50,10 +53,25 @@ export const ReservationsTable: React.FC<ReservationsTableProps> = ({
   };
 
   const handleStatusUpdate = (reservation: Reservation, newStatus: 'accepted' | 'deleted' | 'expired') => {
+    // Set this reservation as having a pending action
+    setPendingActions(prev => ({
+      ...prev,
+      [reservation.id]: newStatus
+    }));
+    
     console.log(`ReservationsTable: Updating reservation ${reservation.id} from ${reservation.status} to ${newStatus}`);
     updateReservationStatus.mutate({ 
       reservation,
       newStatus
+    }, {
+      onSettled: () => {
+        // Remove from pending actions when completed (success or error)
+        setPendingActions(prev => {
+          const updated = {...prev};
+          delete updated[reservation.id];
+          return updated;
+        });
+      }
     });
   };
 
@@ -62,7 +80,6 @@ export const ReservationsTable: React.FC<ReservationsTableProps> = ({
   }
 
   console.log(`ReservationsTable: Rendering table with ${filteredReservations.length} reservations for ${activeTab} tab`);
-  console.log('Current filtered reservations:', filteredReservations);
 
   return (
     <Table>
@@ -106,17 +123,17 @@ export const ReservationsTable: React.FC<ReservationsTableProps> = ({
                       variant="success"
                       size="sm"
                       onClick={() => handleStatusUpdate(reservation, 'accepted')}
-                      disabled={updateReservationStatus.isPending}
+                      disabled={pendingActions[reservation.id] !== undefined || updateReservationStatus.isPending}
                     >
-                      Accept
+                      {pendingActions[reservation.id] === 'accepted' ? 'Accepting...' : 'Accept'}
                     </Button>
                     <Button
                       variant="destructive"
                       size="sm"
                       onClick={() => handleStatusUpdate(reservation, 'deleted')}
-                      disabled={updateReservationStatus.isPending}
+                      disabled={pendingActions[reservation.id] !== undefined || updateReservationStatus.isPending}
                     >
-                      Delete
+                      {pendingActions[reservation.id] === 'deleted' ? 'Deleting...' : 'Delete'}
                     </Button>
                   </div>
                 </TableCell>
@@ -128,18 +145,18 @@ export const ReservationsTable: React.FC<ReservationsTableProps> = ({
                       className="bg-orange-500 hover:bg-orange-600 text-white"
                       size="sm"
                       onClick={() => handleStatusUpdate(reservation, 'expired')}
-                      disabled={updateReservationStatus.isPending}
+                      disabled={pendingActions[reservation.id] !== undefined || updateReservationStatus.isPending}
                     >
-                      Mark Expired
+                      {pendingActions[reservation.id] === 'expired' ? 'Updating...' : 'Mark Expired'}
                     </Button>
                   ) : (
                     <Button
                       variant="destructive"
                       size="sm"
                       onClick={() => handleStatusUpdate(reservation, 'deleted')}
-                      disabled={updateReservationStatus.isPending}
+                      disabled={pendingActions[reservation.id] !== undefined || updateReservationStatus.isPending}
                     >
-                      Cancel
+                      {pendingActions[reservation.id] === 'deleted' ? 'Cancelling...' : 'Cancel'}
                     </Button>
                   )}
                 </TableCell>
