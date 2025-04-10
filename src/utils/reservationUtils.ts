@@ -88,15 +88,21 @@ export const fetchReservations = async () => {
         // Check the actual structure of menu_items
         console.log(`Menu item structure for reservation ${reservation.id}:`, mi.menu_items);
         
+        // Define a type-safe function to extract values
+        const getMenuItemProperty = (menuItemsData: any, property: string): any => {
+          if (!menuItemsData) return null;
+          
+          if (Array.isArray(menuItemsData)) {
+            return menuItemsData[0] ? menuItemsData[0][property] : null;
+          } else {
+            return menuItemsData[property];
+          }
+        };
+        
         return {
           id: mi.menu_item_id,
-          // Handle menu_items correctly based on whether it's an object or array
-          name: Array.isArray(mi.menu_items) 
-            ? mi.menu_items[0]?.name 
-            : mi.menu_items?.name,
-          price: Array.isArray(mi.menu_items) 
-            ? mi.menu_items[0]?.price 
-            : mi.menu_items?.price,
+          name: getMenuItemProperty(mi.menu_items, 'name'),
+          price: getMenuItemProperty(mi.menu_items, 'price'),
           quantity: mi.quantity
         };
       });
