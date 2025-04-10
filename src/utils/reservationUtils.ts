@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { QueryClient } from '@tanstack/react-query';
 
@@ -116,7 +115,7 @@ export const fetchReservations = async () => {
 };
 
 /**
- * Updates a reservation's status
+ * Updates a reservation's status using multiple fallback methods
  */
 export const updateReservationStatus = async ({ 
   reservation, 
@@ -129,19 +128,69 @@ export const updateReservationStatus = async ({
   console.log('Current reservation state:', JSON.stringify(reservation, null, 2));
   
   try {
-    // Log the exact query we're about to execute
-    console.log(`Executing update query: UPDATE reservations SET status = '${newStatus}' WHERE id = '${reservation.id}'`);
+    // First, try using the dedicated RPC function we created
+    console.log("Attempting update using the database function");
+    const { data: rpcData, error: rpcError } = await supabase.rpc('update_reservation_status', {
+      reservation_id: reservation.id,
+      new_status: newStatus
+    });
     
-    // First try to update with .match approach which is more reliable
+    if (rpcError) {
+      console.error('Database function update failed:', rpcError);
+      // Fall back to direct update methods
+    } else if (rpcData === true) {
+      console.log('Successfully updated reservation via database function');
+      
+      // Then, send email notification (only for accepted or deleted)
+      if (newStatus === 'accepted' || newStatus === 'deleted') {
+        try {
+          console.log('Sending email notification with payload:', {
+            customerEmail: reservation.email,
+            customerName: reservation.name,
+            date: reservation.date,
+            tableType: reservation.table_type,
+            status: newStatus === 'accepted' ? 'accepted' : 'rejected'
+          });
+          
+          const emailResponse = await supabase.functions.invoke('send-reservation-email', {
+            body: {
+              customerEmail: reservation.email,
+              customerName: reservation.name,
+              date: reservation.date,
+              tableType: reservation.table_type,
+              status: newStatus === 'accepted' ? 'accepted' : 'rejected'
+            }
+          });
+          
+          console.log('Email response:', emailResponse);
+        } catch (emailError) {
+          console.error('Email sending failed but update was successful:', emailError);
+          // We don't throw here because the status update was successful
+        }
+      }
+      
+      return { 
+        success: true, 
+        data: { 
+          ...reservation, 
+          status: newStatus 
+        } 
+      };
+    } else {
+      console.error('Database function returned false, reservation not found or not updated');
+    }
+    
+    // If RPC method fails or returns false, try direct updates
+    console.log("Attempting direct database update using .match");
     const { data: updateData, error: updateMatchError } = await supabase
       .from('reservations')
       .update({ status: newStatus })
       .match({ id: reservation.id })
       .select();
     
-    // If that fails, try the .eq approach as fallback
+    // If match approach fails, try eq approach
     if (updateMatchError || !updateData || updateData.length === 0) {
-      console.log("First update approach failed, trying alternate method", updateMatchError);
+      console.log("Match update failed, trying .eq approach", updateMatchError);
       
       const { data, error: updateError } = await supabase
         .from('reservations')
@@ -154,13 +203,10 @@ export const updateReservationStatus = async ({
         throw updateError;
       }
 
-      console.log('Update response:', JSON.stringify(data, null, 2));
-
-      // Check if status was actually updated
       if (!data || data.length === 0) {
         console.error('No reservation was updated, possible database issue');
         
-        // Let's verify if the reservation exists
+        // Verify if the reservation exists
         const { data: checkData, error: checkError } = await supabase
           .from('reservations')
           .select('id, status')
@@ -171,27 +217,39 @@ export const updateReservationStatus = async ({
           console.error('Error checking reservation existence:', checkError);
         } else {
           console.log('Reservation check result:', checkData);
+          if (checkData) {
+            // Reservation exists but couldn't be updated
+            console.error('Reservation exists but could not be updated');
+          }
         }
         
-        // As a last resort, try a direct RPC call if available
+        throw new Error('Failed to update reservation status - no records were affected');
+      }
+      
+      // Send email notification for .eq update method
+      if (newStatus === 'accepted' || newStatus === 'deleted') {
         try {
-          console.log("Attempting direct update via PostgreSQL query");
-          const { data: rpcData, error: rpcError } = await supabase.rpc('update_reservation_status', {
-            reservation_id: reservation.id,
-            new_status: newStatus
+          console.log('Sending email notification with payload:', {
+            customerEmail: reservation.email,
+            customerName: reservation.name,
+            date: reservation.date,
+            tableType: reservation.table_type,
+            status: newStatus === 'accepted' ? 'accepted' : 'rejected'
           });
           
-          if (rpcError) {
-            console.error('RPC update failed:', rpcError);
-            throw new Error('Failed to update reservation status - no records were affected');
-          }
+          const emailResponse = await supabase.functions.invoke('send-reservation-email', {
+            body: {
+              customerEmail: reservation.email,
+              customerName: reservation.name,
+              date: reservation.date,
+              tableType: reservation.table_type,
+              status: newStatus === 'accepted' ? 'accepted' : 'rejected'
+            }
+          });
           
-          console.log('RPC update response:', rpcData);
-          // If we get here, the RPC method worked
-          return { success: true, data: { id: reservation.id, status: newStatus } };
-        } catch (rpcAttemptError) {
-          console.error('RPC attempt failed:', rpcAttemptError);
-          throw new Error('Failed to update reservation status - no records were affected');
+          console.log('Email response:', emailResponse);
+        } catch (emailError) {
+          console.error('Email sending failed but update was successful:', emailError);
         }
       }
       
@@ -200,10 +258,7 @@ export const updateReservationStatus = async ({
     
     console.log('Update with match succeeded:', JSON.stringify(updateData, null, 2));
     
-    // If we got here, the first update method worked
-    const updatedRecord = updateData[0];
-
-    // Then, send email notification (only for accepted or deleted)
+    // Send email notification for match update method
     if (newStatus === 'accepted' || newStatus === 'deleted') {
       try {
         console.log('Sending email notification with payload:', {
@@ -227,11 +282,11 @@ export const updateReservationStatus = async ({
         console.log('Email response:', emailResponse);
       } catch (emailError) {
         console.error('Email sending failed but update was successful:', emailError);
-        // We don't throw here because the status update was successful
       }
     }
     
-    return { success: true, data: updatedRecord };
+    return { success: true, data: updateData[0] };
+    
   } catch (error) {
     console.error('Error in updateReservationStatus:', error);
     throw error;
