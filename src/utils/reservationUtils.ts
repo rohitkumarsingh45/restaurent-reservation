@@ -95,7 +95,9 @@ export const fetchReservations = async () => {
   
   // Enhanced logging to debug menu items structure
   if (menuItemsData && menuItemsData.length > 0) {
-    console.log('Sample menu item data:', JSON.stringify(menuItemsData[0], null, 2));
+    console.log('Sample menu item data structure:', JSON.stringify(menuItemsData[0], null, 2));
+    console.log('Menu items field type:', typeof menuItemsData[0].menu_items);
+    console.log('Is menu_items an array?', Array.isArray(menuItemsData[0].menu_items));
   }
 
   // Combine the data
@@ -104,14 +106,31 @@ export const fetchReservations = async () => {
     const reservationMenuItems = menuItemsData
       .filter((mi) => mi.reservation_id === reservation.id)
       .map((mi) => {
-        // Fix: Extract menu_items correctly from the join
-        // Properly type and handle the menu_items object
-        const menuItem = mi.menu_items as { id: string; name: string; price: number } | null;
+        // Handle menu_items correctly based on its actual structure
+        // It might be an array or an object depending on how Supabase returns the data
+        const menuItemData = mi.menu_items;
+        
+        // Properly handle different possible data structures
+        let menuItemName = 'Unknown Item';
+        let menuItemPrice = 0;
+        
+        if (menuItemData) {
+          // If it's an array, take first element
+          if (Array.isArray(menuItemData) && menuItemData.length > 0) {
+            menuItemName = menuItemData[0].name || 'Unknown Item';
+            menuItemPrice = menuItemData[0].price || 0;
+          } 
+          // If it's an object, use directly
+          else if (typeof menuItemData === 'object') {
+            menuItemName = menuItemData.name || 'Unknown Item';
+            menuItemPrice = menuItemData.price || 0;
+          }
+        }
         
         return {
           id: mi.menu_item_id,
-          name: menuItem ? menuItem.name : 'Unknown Item',
-          price: menuItem ? menuItem.price : 0,
+          name: menuItemName,
+          price: menuItemPrice,
           quantity: mi.quantity || 1
         };
       });
