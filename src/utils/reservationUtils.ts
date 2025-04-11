@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import { QueryClient } from '@tanstack/react-query';
 
@@ -92,8 +93,8 @@ export const fetchReservations = async () => {
         // TypeScript fix: Properly handle menu_items as a single object
         return {
           id: mi.menu_item_id,
-          name: mi.menu_items?.name || 'Unknown Item',
-          price: mi.menu_items?.price || 0,
+          name: mi.menu_items ? mi.menu_items.name || 'Unknown Item' : 'Unknown Item',
+          price: mi.menu_items ? mi.menu_items.price || 0 : 0,
           quantity: mi.quantity || 1
         };
       });
@@ -130,12 +131,10 @@ export const updateReservationStatus = async ({
   const { data, error: updateError } = await supabase
     .from('reservations')
     .update({ status: newStatus })
-    .eq('id', reservation.id)
-    .select()
-    .single();
-
-  // If error or no data returned, log and throw
-  if (updateError || !data) {
+    .eq('id', reservation.id);
+    
+  // If error, log and try the RPC call as a fallback
+  if (updateError) {
     console.error('Error updating reservation status:', updateError);
     
     // Try RPC call as fallback
@@ -146,8 +145,13 @@ export const updateReservationStatus = async ({
         new_status: newStatus 
       });
     
-    if (rpcError || !rpcResult) {
+    if (rpcError) {
       console.error('RPC update failed:', rpcError);
+      throw new Error('Failed to update reservation status - no records were affected');
+    }
+    
+    if (rpcResult === false) {
+      console.error('RPC update returned false');
       throw new Error('Failed to update reservation status - no records were affected');
     }
     
@@ -174,5 +178,6 @@ export const updateReservationStatus = async ({
   }
   
   console.log(`Successfully updated reservation to: ${newStatus}`);
-  return { success: true, data: data || { id: reservation.id, status: newStatus } };
+  return { success: true, data: { id: reservation.id, status: newStatus } };
 };
+
