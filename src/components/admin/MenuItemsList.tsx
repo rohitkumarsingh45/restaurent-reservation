@@ -1,18 +1,26 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { MenuItem } from '@/types/reservations';
+import { AlertCircle } from 'lucide-react';
 
 interface MenuItemsListProps {
   menuItems?: MenuItem[];
 }
 
 export const MenuItemsList: React.FC<MenuItemsListProps> = ({ menuItems }) => {
+  useEffect(() => {
+    // Log the menu items being received for debugging
+    console.log('MenuItemsList received:', menuItems);
+  }, [menuItems]);
+
   if (!menuItems || menuItems.length === 0) {
-    return <span className="text-gray-500">None</span>;
+    return (
+      <div className="flex items-center text-gray-500 gap-1">
+        <span>None</span>
+        <span className="text-xs text-muted-foreground">(No pre-orders)</span>
+      </div>
+    );
   }
-  
-  // Add debug logging to help troubleshoot
-  console.log('MenuItemsList received items:', JSON.stringify(menuItems, null, 2));
   
   return (
     <div className="space-y-1">

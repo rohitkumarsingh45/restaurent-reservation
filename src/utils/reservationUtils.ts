@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import { QueryClient } from '@tanstack/react-query';
 
@@ -60,6 +61,20 @@ export const fetchReservations = async () => {
 
   console.log(`Retrieved ${reservationsData?.length || 0} reservations`);
 
+  // Debug the reservation_menu_items table to check if there's data
+  const { data: debugData, error: debugError } = await supabase
+    .from('reservation_menu_items')
+    .select('*');
+    
+  if (debugError) {
+    console.error('Error checking reservation_menu_items table:', debugError);
+  } else {
+    console.log(`Debug: reservation_menu_items table has ${debugData?.length || 0} entries`);
+    if (debugData && debugData.length > 0) {
+      console.log('Sample reservation_menu_items entry:', debugData[0]);
+    }
+  }
+
   // Get all reservation menu items with full menu item details
   const { data: menuItemsData, error: menuItemsError } = await supabase
     .from('reservation_menu_items')
@@ -68,7 +83,7 @@ export const fetchReservations = async () => {
       reservation_id,
       menu_item_id,
       quantity,
-      menu_items (id, name, price)
+      menu_items:menu_item_id (id, name, price)
     `);
 
   if (menuItemsError) {
@@ -79,7 +94,7 @@ export const fetchReservations = async () => {
   console.log(`Retrieved ${menuItemsData?.length || 0} menu items`);
   
   // Enhanced logging to debug menu items structure
-  if (menuItemsData.length > 0) {
+  if (menuItemsData && menuItemsData.length > 0) {
     console.log('Sample menu item data:', JSON.stringify(menuItemsData[0], null, 2));
   }
 
@@ -89,12 +104,12 @@ export const fetchReservations = async () => {
     const reservationMenuItems = menuItemsData
       .filter((mi) => mi.reservation_id === reservation.id)
       .map((mi) => {
-        // Fix: Properly handle menu_items as an object not an array
-        const menuItem = mi.menu_items as any; // Type assertion to handle the structure
+        // Fix: Extract menu_items correctly from the join
+        const menuItem = mi.menu_items;
         return {
           id: mi.menu_item_id,
-          name: menuItem && typeof menuItem === 'object' ? menuItem.name || 'Unknown Item' : 'Unknown Item',
-          price: menuItem && typeof menuItem === 'object' ? menuItem.price || 0 : 0,
+          name: menuItem ? (typeof menuItem === 'object' ? menuItem.name : 'Unknown Item') : 'Unknown Item',
+          price: menuItem ? (typeof menuItem === 'object' ? menuItem.price : 0) : 0,
           quantity: mi.quantity || 1
         };
       });
