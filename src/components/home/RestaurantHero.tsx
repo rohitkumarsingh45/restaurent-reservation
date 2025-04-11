@@ -12,13 +12,13 @@ const RestaurantHero = () => {
       <div className="container mx-auto px-4">
         <div className="flex flex-col md:flex-row items-center gap-12">
           <div className="md:w-1/2">
-            <h2 className="text-4xl font-bold mb-6 text-primary">Welcome to La Belle Cuisine</h2>
+            <h2 className="text-4xl font-bold mb-6 text-primary">Welcome to Namaste Bharat</h2>
             <div className="flex items-center mb-4">
               <Award className="w-6 h-6 text-yellow-500 mr-2" />
               <span className="text-lg font-semibold">Award-Winning Fine Dining</span>
             </div>
             <p className="text-gray-700 mb-6 leading-relaxed">
-              Since 1998, La Belle Cuisine has been crafting extraordinary dining experiences 
+              Since 1998, Namaste Bharat has been crafting extraordinary dining experiences 
               that combine exquisite flavors, elegant ambiance, and impeccable service.
               Our commitment to culinary excellence has made us a destination for food enthusiasts 
               and a cherished venue for life's special moments.
@@ -39,7 +39,7 @@ const RestaurantHero = () => {
               <Button 
                 onClick={() => navigate('/menu')} 
                 variant="default"
-                className="bg-[#8B5CF6] hover:bg-[#7E69AB] text-white font-medium rounded-md transition-all duration-300 shadow-md hover:shadow-lg"
+                className="bg-[#8B5CF6] hover:bg-[#7E69AB] text-black font-medium rounded-md transition-all duration-300 shadow-md hover:shadow-lg"
               >
                 <Utensils className="mr-2" size={18} />
                 Explore Our Menu
@@ -67,7 +67,7 @@ const RestaurantHero = () => {
                 <ChefHat className="w-5 h-5 mr-2" />
                 <h4 className="font-semibold">Our Executive Chef</h4>
               </div>
-              <p className="text-sm">Jean-Pierre Dubois, with 25 years of culinary expertise</p>
+              <p className="text-sm">Mr, Sharma, with 25 years of culinary expertise</p>
             </div>
           </div>
         </div>

@@ -14,31 +14,7 @@ interface Review {
 const ReviewsSection = () => {
   const reviews: Review[] = [
     {
-      name: "Sarah Anderson",
-      rating: 5,
-      comment: "Absolutely phenomenal dining experience! The chef's tasting menu was a culinary journey that exceeded all expectations. Every dish was a perfect harmony of flavors and presentation.",
-      date: "March 15, 2025",
-      image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80",
-      role: "Food Critic"
-    },
-    {
-      name: "Michael Chen",
-      rating: 5,
-      comment: "The wine pairing was expertly curated, and the sommelier's knowledge added an extra dimension to our meal. The ambiance perfectly balances luxury with comfort.",
-      date: "April 2, 2025",
-      image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80",
-      role: "Wine Enthusiast"
-    },
-    {
-      name: "Isabella Martinez",
-      rating: 5,
-      comment: "From the moment we walked in, the service was impeccable. The seasonal menu showcases local ingredients at their finest. The dessert was simply unforgettable!",
-      date: "April 8, 2025",
-      image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80",
-      role: "Regular Guest"
-    },
-    {
-      name: "James Wilson",
+      name: "John Doe",
       rating: 5,
       comment: "The attention to detail in both food and service is remarkable. Their commitment to sustainability and local sourcing makes dining here even more special.",
       date: "March 28, 2025",
@@ -46,7 +22,7 @@ const ReviewsSection = () => {
       role: "Food Blogger"
     },
     {
-      name: "Emily Thompson",
+      name: "Jane Smith",
       rating: 5,
       comment: "Celebrated our anniversary here and it was magical! The custom tasting menu and personalized service made our special evening unforgettable.",
       date: "April 5, 2025",
@@ -56,10 +32,7 @@ const ReviewsSection = () => {
     {
       name: "David Kumar",
       rating: 5,
-      comment: "A true culinary gem! The fusion of traditional and modern techniques creates dishes that are both innovative and deeply satisfying.",
-      date: "March 22, 2025",
-      image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80",
-      role: "Culinary Professional"
+      comment: "Outstanding service and amazing food. Will definitely come back!"
     }
   ];
   

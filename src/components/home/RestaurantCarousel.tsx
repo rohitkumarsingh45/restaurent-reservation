@@ -80,12 +80,12 @@ const RestaurantCarousel = () => {
                   className="absolute inset-0 bg-cover bg-center transition-opacity duration-500"
                   style={{ backgroundImage: `url(${image.url})` }}
                 >
-                  <div className="absolute inset-0 bg-black/40 flex flex-col justify-center items-center text-white">
+                  <div className="absolute inset-0 bg-black/40 flex flex-col justify-center items-center text-white px-4 text-center">
                     <h2 className="text-5xl font-bold mb-4 animate-fade-in">{image.title}</h2>
                     <p className="text-xl mb-8 animate-fade-in">{image.description}</p>
                     <div className="flex space-x-4 animate-fade-in">
-                      <Button 
-                        variant="default" 
+                      <Button
+                        variant="default"
                         size="lg"
                         onClick={() => navigate('/menu')}
                         className="bg-white text-black hover:bg-white/90 transition-colors duration-300"
@@ -100,9 +100,10 @@ const RestaurantCarousel = () => {
             </CarouselItem>
           ))}
         </CarouselContent>
+
         <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-10 flex gap-2">
-          <CarouselPrevious className="relative -left-0 bg-white/30 hover:bg-white/50 border-none text-white transition-colors duration-300" />
-          <CarouselNext className="relative -right-0 bg-white/30 hover:bg-white/50 border-none text-white transition-colors duration-300" />
+          <CarouselPrevious className="relative bg-white/30 hover:bg-white/50 border-none text-white transition-colors duration-300" />
+          <CarouselNext className="relative bg-white/30 hover:bg-white/50 border-none text-white transition-colors duration-300" />
         </div>
       </Carousel>
     </section>

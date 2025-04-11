@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { format } from 'date-fns';
 import { Button } from "@/components/ui/button";
@@ -11,6 +10,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { MenuItemsList } from './MenuItemsList';
+import { CheckCircle, Trash, Clock } from 'lucide-react'; // Add icons for actions
+import ReactTooltip from 'react-tooltip'; // Import react-tooltip
 
 interface Reservation {
   id: string;
@@ -51,12 +52,22 @@ export const ReservationsTable: React.FC<ReservationsTableProps> = ({
     return reservationDate < currentDate;
   };
 
+<<<<<<< HEAD
+  const handleStatusUpdate = (reservation: Reservation, newStatus: 'accepted' | 'deleted' | 'expired') => {
+    updateReservationStatus.mutate({ 
+      reservation,
+      newStatus
+    });
+  };
+
+=======
+>>>>>>> ba5141fc0c117f0972bcd7067395e77aa8fce5ed
   if (isLoading) {
-    return <div className="text-center py-4">Loading...</div>;
+    return <div className="text-center py-4 text-xl text-gray-500">Loading reservations...</div>;
   }
 
   return (
-    <Table>
+    <Table className="table-auto w-full">
       <TableHeader>
         <TableRow>
           <TableHead>Name</TableHead>
@@ -78,12 +89,10 @@ export const ReservationsTable: React.FC<ReservationsTableProps> = ({
           </TableRow>
         ) : (
           filteredReservations.map((reservation) => (
-            <TableRow key={reservation.id}>
+            <TableRow key={reservation.id} className="hover:bg-gray-100 transition-colors duration-200">
               <TableCell>{reservation.name}</TableCell>
               <TableCell>{reservation.email}</TableCell>
-              <TableCell>
-                {format(new Date(reservation.date), 'PPP p')}
-              </TableCell>
+              <TableCell>{format(new Date(reservation.date), 'PPP p')}</TableCell>
               <TableCell>{reservation.table_type}</TableCell>
               <TableCell>{reservation.phone || 'N/A'}</TableCell>
               <TableCell className="max-w-xs truncate">{reservation.special_requests || 'N/A'}</TableCell>
@@ -102,7 +111,9 @@ export const ReservationsTable: React.FC<ReservationsTableProps> = ({
                         newStatus: 'accepted'
                       })}
                       disabled={updateReservationStatus.isPending}
+                      data-tip="Accept this reservation"
                     >
+                      <CheckCircle className="h-5 w-5" />
                       Accept
                     </Button>
                     <Button
@@ -113,7 +124,9 @@ export const ReservationsTable: React.FC<ReservationsTableProps> = ({
                         newStatus: 'deleted'
                       })}
                       disabled={updateReservationStatus.isPending}
+                      data-tip="Delete this reservation"
                     >
+                      <Trash className="h-5 w-5" />
                       Delete
                     </Button>
                   </div>
@@ -130,7 +143,9 @@ export const ReservationsTable: React.FC<ReservationsTableProps> = ({
                         newStatus: 'expired'
                       })}
                       disabled={updateReservationStatus.isPending}
+                      data-tip="Mark this reservation as expired"
                     >
+                      <Clock className="h-5 w-5" />
                       Mark Expired
                     </Button>
                   ) : (
@@ -142,7 +157,9 @@ export const ReservationsTable: React.FC<ReservationsTableProps> = ({
                         newStatus: 'deleted'
                       })}
                       disabled={updateReservationStatus.isPending}
+                      data-tip="Cancel this reservation"
                     >
+                      <Trash className="h-5 w-5" />
                       Cancel
                     </Button>
                   )}
