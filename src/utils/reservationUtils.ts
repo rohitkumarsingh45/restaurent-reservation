@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { QueryClient } from '@tanstack/react-query';
 
@@ -81,7 +80,7 @@ export const fetchReservations = async () => {
   
   // Enhanced logging to debug menu items structure
   if (menuItemsData.length > 0) {
-    console.log('Sample menu item data:', menuItemsData[0]);
+    console.log('Sample menu item data:', JSON.stringify(menuItemsData[0], null, 2));
   }
 
   // Combine the data
@@ -90,13 +89,11 @@ export const fetchReservations = async () => {
     const reservationMenuItems = menuItemsData
       .filter((mi) => mi.reservation_id === reservation.id)
       .map((mi) => {
-        // Extract menu item details - Fix: Properly access menu_items which is a single object, not an array
-        const menuItem = mi.menu_items;
-        
+        // TypeScript fix: Properly handle menu_items as a single object
         return {
           id: mi.menu_item_id,
-          name: menuItem ? menuItem.name || 'Unknown Item' : 'Unknown Item',
-          price: menuItem ? menuItem.price || 0 : 0,
+          name: mi.menu_items?.name || 'Unknown Item',
+          price: mi.menu_items?.price || 0,
           quantity: mi.quantity || 1
         };
       });

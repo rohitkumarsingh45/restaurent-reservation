@@ -12,7 +12,7 @@ export const MenuItemsList: React.FC<MenuItemsListProps> = ({ menuItems }) => {
   }
   
   // Add debug logging to help troubleshoot
-  console.log('MenuItemsList received items:', menuItems);
+  console.log('MenuItemsList received items:', JSON.stringify(menuItems, null, 2));
   
   return (
     <div className="space-y-1">
