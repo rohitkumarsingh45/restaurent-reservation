@@ -1,14 +1,18 @@
-
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DashboardStats } from '@/components/admin/DashboardStats';
 import { ReservationsTable } from '@/components/admin/ReservationsTable';
 import { useReservations } from '@/hooks/useReservations';
 import { useToast } from "@/components/ui/use-toast";
+import { useNavigate } from 'react-router-dom';
+import AdminAuth from '@/components/admin/AdminAuth';
 
 const AdminDashboard = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [showAuthDialog, setShowAuthDialog] = useState(true);
   const {
     activeTab,
     setActiveTab,
@@ -19,13 +23,33 @@ const AdminDashboard = () => {
     updateReservationStatus
   } = useReservations();
 
-  // Check for expired reservations on component mount and tab change
   useEffect(() => {
-    // This will trigger the check in the useReservations hook
     if (activeTab === 'expired' || activeTab === 'accepted') {
       // We can force a re-check here if needed
     }
   }, [activeTab]);
+
+  const handleAuthSuccess = () => {
+    setIsAuthenticated(true);
+    setShowAuthDialog(false);
+  };
+
+  const handleAuthClose = () => {
+    if (!isAuthenticated) {
+      navigate('/');
+    }
+    setShowAuthDialog(false);
+  };
+
+  if (!isAuthenticated) {
+    return (
+      <AdminAuth 
+        isOpen={showAuthDialog}
+        onClose={handleAuthClose}
+        onSuccess={handleAuthSuccess}
+      />
+    );
+  }
 
   if (error) {
     toast({

@@ -1,8 +1,11 @@
-
 import React from 'react';
-import { MapPin, Phone, Mail } from 'lucide-react';
+import { MapPin, Phone, Mail, Shield } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Button } from "@/components/ui/button";
 
 const RestaurantFooter = () => {
+  const navigate = useNavigate();
+  
   return (
     <footer className="bg-gray-900 text-white py-12">
       <div className="container mx-auto px-4">
@@ -38,7 +41,17 @@ const RestaurantFooter = () => {
           </div>
         </div>
         <div className="border-t border-gray-800 mt-8 pt-8 text-center">
-          <p>&copy; 2024 La Belle Cuisine. All rights reserved.</p>
+          <div className="flex justify-between items-center">
+            <p>&copy; 2024 La Belle Cuisine. All rights reserved.</p>
+            <Button 
+              variant="outline" 
+              className="text-gray-800 hover:text-white border border-gray-700 hover:border-white hover:bg-gray-800 transition-all duration-200"
+              onClick={() => navigate('/admin')}
+            >
+              <Shield className="w-4 h-4 mr-2" />
+              Admin Access
+            </Button>
+          </div>
         </div>
       </div>
     </footer>
