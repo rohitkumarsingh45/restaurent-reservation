@@ -61,6 +61,8 @@ export const useReservations = () => {
   const { data: reservations, isLoading, error } = useQuery({
     queryKey: ['reservations'],
     queryFn: async () => {
+      console.log('Fetching reservations...');
+      
       // First get all reservations
       const { data: reservationsData, error: reservationsError } = await supabase
         .from('reservations')
@@ -72,7 +74,9 @@ export const useReservations = () => {
         throw reservationsError;
       }
 
-      // Get all reservation menu items
+      console.log('Reservations data:', reservationsData);
+
+      // Get all reservation menu items with their details
       const { data: menuItemsData, error: menuItemsError } = await supabase
         .from('reservation_menu_items')
         .select(`
@@ -87,24 +91,44 @@ export const useReservations = () => {
         throw menuItemsError;
       }
 
+      console.log('Menu items data:', menuItemsData);
+
+      // Group menu items by reservation
+      const menuItemsByReservation: Record<string, MenuItem[]> = {};
+      
+      menuItemsData.forEach((item: any) => {
+        if (!item.menu_items) {
+          console.warn('Missing menu_items data for item:', item);
+          return;
+        }
+        
+        const menuItem: MenuItem = {
+          id: item.menu_item_id,
+          name: item.menu_items.name,
+          price: item.menu_items.price,
+          quantity: item.quantity
+        };
+        
+        if (!menuItemsByReservation[item.reservation_id]) {
+          menuItemsByReservation[item.reservation_id] = [];
+        }
+        
+        menuItemsByReservation[item.reservation_id].push(menuItem);
+      });
+
+      console.log('Menu items by reservation:', menuItemsByReservation);
+
       // Combine the data
       const reservationsWithMenuItems: ReservationWithMenuItems[] = reservationsData.map((reservation: Reservation) => {
-        const reservationMenuItems = menuItemsData
-          .filter((mi: any) => mi.reservation_id === reservation.id)
-          .map((mi: any) => ({
-            id: mi.menu_item_id,
-            name: mi.menu_items.name,
-            price: mi.menu_items.price,
-            quantity: mi.quantity
-          }));
-
         return {
           ...reservation,
           status: reservation.status || 'pending',
-          menuItems: reservationMenuItems.length > 0 ? reservationMenuItems : undefined
+          menuItems: menuItemsByReservation[reservation.id] || []
         };
       });
 
+      console.log('Reservations with menu items:', reservationsWithMenuItems);
+      
       return reservationsWithMenuItems;
     },
   });

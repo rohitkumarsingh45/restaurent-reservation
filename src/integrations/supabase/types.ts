@@ -161,7 +161,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      update_reservation_status: {
+        Args: { reservation_id: string; new_status: string }
+        Returns: boolean
+      }
     }
     Enums: {
       table_size: "2-seater" | "4-seater" | "6-seater" | "8-seater"

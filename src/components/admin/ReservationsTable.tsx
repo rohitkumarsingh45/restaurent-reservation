@@ -43,6 +43,8 @@ export const ReservationsTable: React.FC<ReservationsTableProps> = ({
   isLoading,
   updateReservationStatus
 }) => {
+  console.log('ReservationsTable rendered with reservations:', filteredReservations);
+  
   const isPastDate = (dateString: string) => {
     const reservationDate = new Date(dateString);
     const currentDate = new Date();
@@ -86,6 +88,7 @@ export const ReservationsTable: React.FC<ReservationsTableProps> = ({
               <TableCell>{reservation.phone || 'N/A'}</TableCell>
               <TableCell className="max-w-xs truncate">{reservation.special_requests || 'N/A'}</TableCell>
               <TableCell>
+                {console.log('Rendering MenuItemsList with:', reservation.menuItems)}
                 <MenuItemsList menuItems={reservation.menuItems} />
               </TableCell>
               {activeTab === 'pending' && (
