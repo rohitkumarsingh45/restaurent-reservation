@@ -9,8 +9,11 @@ interface MenuItemsListProps {
 
 export const MenuItemsList: React.FC<MenuItemsListProps> = ({ menuItems }) => {
   useEffect(() => {
-    // Log the menu items being received for debugging
+    // Enhanced logging to understand exactly what we're receiving
     console.log('MenuItemsList received:', menuItems);
+    if (menuItems && menuItems.length > 0) {
+      console.log('First menu item details:', JSON.stringify(menuItems[0], null, 2));
+    }
   }, [menuItems]);
 
   if (!menuItems || menuItems.length === 0) {

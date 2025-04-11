@@ -98,6 +98,16 @@ export const fetchReservations = async () => {
     console.log('Sample menu item data structure:', JSON.stringify(menuItemsData[0], null, 2));
     console.log('Menu items field type:', typeof menuItemsData[0].menu_items);
     console.log('Is menu_items an array?', Array.isArray(menuItemsData[0].menu_items));
+    
+    // New detailed logging to understand the exact structure
+    const menuItemsSample = menuItemsData[0].menu_items;
+    console.log('Menu items detailed inspection:', {
+      value: menuItemsSample,
+      type: typeof menuItemsSample,
+      isArray: Array.isArray(menuItemsSample),
+      keys: menuItemsSample ? Object.keys(menuItemsSample) : [],
+      prototype: menuItemsSample ? Object.getPrototypeOf(menuItemsSample) : null
+    });
   }
 
   // Combine the data
@@ -106,29 +116,34 @@ export const fetchReservations = async () => {
     const reservationMenuItems = menuItemsData
       .filter((mi) => mi.reservation_id === reservation.id)
       .map((mi) => {
-        // Handle menu_items correctly based on its actual structure
-        // It might be an array or an object depending on how Supabase returns the data
+        // Safely extract menu item data with better type handling
         const menuItemData = mi.menu_items;
         
-        // Properly handle different possible data structures
+        // Initialize default values
         let menuItemName = 'Unknown Item';
         let menuItemPrice = 0;
+        let menuItemId = mi.menu_item_id;
         
+        // Handle different data structures more carefully
         if (menuItemData) {
-          // If it's an array, take first element
-          if (Array.isArray(menuItemData) && menuItemData.length > 0) {
-            menuItemName = menuItemData[0].name || 'Unknown Item';
-            menuItemPrice = menuItemData[0].price || 0;
-          } 
-          // If it's an object, use directly
-          else if (typeof menuItemData === 'object') {
-            menuItemName = menuItemData.name || 'Unknown Item';
-            menuItemPrice = menuItemData.price || 0;
+          if (Array.isArray(menuItemData)) {
+            // If it's an array, use the first item
+            if (menuItemData.length > 0) {
+              const firstItem = menuItemData[0];
+              menuItemName = firstItem?.name || 'Unknown Item';
+              menuItemPrice = firstItem?.price || 0;
+            }
+          } else if (typeof menuItemData === 'object') {
+            // If it's an object, use directly
+            // Use type assertion to tell TypeScript this is a valid menu item
+            const menuItem = menuItemData as unknown as { id?: string; name?: string; price?: number };
+            menuItemName = menuItem?.name || 'Unknown Item';
+            menuItemPrice = menuItem?.price || 0;
           }
         }
         
         return {
-          id: mi.menu_item_id,
+          id: menuItemId,
           name: menuItemName,
           price: menuItemPrice,
           quantity: mi.quantity || 1
