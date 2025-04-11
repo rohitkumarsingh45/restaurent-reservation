@@ -105,11 +105,13 @@ export const fetchReservations = async () => {
       .filter((mi) => mi.reservation_id === reservation.id)
       .map((mi) => {
         // Fix: Extract menu_items correctly from the join
-        const menuItem = mi.menu_items;
+        // Properly type and handle the menu_items object
+        const menuItem = mi.menu_items as { id: string; name: string; price: number } | null;
+        
         return {
           id: mi.menu_item_id,
-          name: menuItem ? (typeof menuItem === 'object' ? menuItem.name : 'Unknown Item') : 'Unknown Item',
-          price: menuItem ? (typeof menuItem === 'object' ? menuItem.price : 0) : 0,
+          name: menuItem ? menuItem.name : 'Unknown Item',
+          price: menuItem ? menuItem.price : 0,
           quantity: mi.quantity || 1
         };
       });
