@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { QueryClient } from '@tanstack/react-query';
 
@@ -90,11 +89,12 @@ export const fetchReservations = async () => {
     const reservationMenuItems = menuItemsData
       .filter((mi) => mi.reservation_id === reservation.id)
       .map((mi) => {
-        // TypeScript fix: Properly handle menu_items as a single object
+        // Fix: Properly handle menu_items as an object not an array
+        const menuItem = mi.menu_items as any; // Type assertion to handle the structure
         return {
           id: mi.menu_item_id,
-          name: mi.menu_items ? mi.menu_items.name || 'Unknown Item' : 'Unknown Item',
-          price: mi.menu_items ? mi.menu_items.price || 0 : 0,
+          name: menuItem && typeof menuItem === 'object' ? menuItem.name || 'Unknown Item' : 'Unknown Item',
+          price: menuItem && typeof menuItem === 'object' ? menuItem.price || 0 : 0,
           quantity: mi.quantity || 1
         };
       });
@@ -180,4 +180,3 @@ export const updateReservationStatus = async ({
   console.log(`Successfully updated reservation to: ${newStatus}`);
   return { success: true, data: { id: reservation.id, status: newStatus } };
 };
-
