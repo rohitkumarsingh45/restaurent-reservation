@@ -95,8 +95,8 @@ export const fetchReservations = async () => {
         
         return {
           id: mi.menu_item_id,
-          name: menuItem?.name || 'Unknown Item',
-          price: menuItem?.price || 0,
+          name: menuItem?.name || 'Unknown Item', // Fixed: Access name from menuItem object
+          price: menuItem?.price || 0, // Fixed: Access price from menuItem object
           quantity: mi.quantity || 1
         };
       });
