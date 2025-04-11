@@ -14,7 +14,7 @@ interface Review {
 const ReviewsSection = () => {
   const reviews: Review[] = [
     {
-      name: "John Doe",
+      name: "Mr.Singh",
       rating: 5,
       comment: "The attention to detail in both food and service is remarkable. Their commitment to sustainability and local sourcing makes dining here even more special.",
       date: "March 28, 2025",
@@ -22,7 +22,7 @@ const ReviewsSection = () => {
       role: "Food Blogger"
     },
     {
-      name: "Jane Smith",
+      name: "kumar Smith",
       rating: 5,
       comment: "Celebrated our anniversary here and it was magical! The custom tasting menu and personalized service made our special evening unforgettable.",
       date: "April 5, 2025",
@@ -33,7 +33,19 @@ const ReviewsSection = () => {
       name: "David Kumar",
       rating: 5,
       comment: "Outstanding service and amazing food. Will definitely come back!"
-    }
+    },
+    {
+      name: "Aisha Verma",
+      rating: 5,
+      comment: "A delightful culinary journey! The flavors were perfectly balanced."
+    },
+    {
+      name: "Rahul Mehta",
+      rating: 5,
+      comment: "Truly a gem! Elegant ambiance and delicious food. Highly recommended."
+    },
+   
+    
   ];
   
   return (
