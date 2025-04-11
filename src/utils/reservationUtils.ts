@@ -60,16 +60,16 @@ export const fetchReservations = async () => {
   }
 
   console.log(`Retrieved ${reservationsData?.length || 0} reservations`);
-  console.log('Raw reservations data:', JSON.stringify(reservationsData, null, 2));
 
-  // Get all reservation menu items
+  // Get all reservation menu items with full menu item details
   const { data: menuItemsData, error: menuItemsError } = await supabase
     .from('reservation_menu_items')
     .select(`
+      id,
       reservation_id,
       menu_item_id,
       quantity,
-      menu_items(id, name, price)
+      menu_items (id, name, price)
     `);
 
   if (menuItemsError) {
@@ -77,33 +77,27 @@ export const fetchReservations = async () => {
     throw menuItemsError;
   }
 
-  // Log menu items data to help debug structure
-  console.log('Menu items data sample:', menuItemsData.length > 0 ? JSON.stringify(menuItemsData[0], null, 2) : 'No menu items');
+  console.log(`Retrieved ${menuItemsData?.length || 0} menu items`);
+  
+  // Enhanced logging to debug menu items structure
+  if (menuItemsData.length > 0) {
+    console.log('Sample menu item data:', menuItemsData[0]);
+  }
 
   // Combine the data
-  return reservationsData.map((reservation) => {
+  const reservationsWithMenuItems = reservationsData.map((reservation) => {
+    // Filter menu items for this reservation
     const reservationMenuItems = menuItemsData
       .filter((mi) => mi.reservation_id === reservation.id)
       .map((mi) => {
-        // Check the actual structure of menu_items
-        console.log(`Menu item structure for reservation ${reservation.id}:`, mi.menu_items);
-        
-        // Define a type-safe function to extract values
-        const getMenuItemProperty = (menuItemsData: any, property: string): any => {
-          if (!menuItemsData) return null;
-          
-          if (Array.isArray(menuItemsData)) {
-            return menuItemsData[0] ? menuItemsData[0][property] : null;
-          } else {
-            return menuItemsData[property];
-          }
-        };
+        // Extract menu item details
+        const menuItem = mi.menu_items;
         
         return {
           id: mi.menu_item_id,
-          name: getMenuItemProperty(mi.menu_items, 'name'),
-          price: getMenuItemProperty(mi.menu_items, 'price'),
-          quantity: mi.quantity
+          name: menuItem?.name || 'Unknown Item',
+          price: menuItem?.price || 0,
+          quantity: mi.quantity || 1
         };
       });
 
@@ -113,6 +107,14 @@ export const fetchReservations = async () => {
       menuItems: reservationMenuItems.length > 0 ? reservationMenuItems : undefined
     };
   });
+
+  console.log('Processed reservations with menu items sample:', 
+    reservationsWithMenuItems.length > 0 ? 
+      JSON.stringify(reservationsWithMenuItems[0], null, 2) : 
+      'No reservations found'
+  );
+
+  return reservationsWithMenuItems;
 };
 
 /**
@@ -127,21 +129,35 @@ export const updateReservationStatus = async ({
 }) => {
   console.log(`Updating reservation ${reservation.id} to status: ${newStatus}`);
   
-  // First, update the status in the database
+  // Try direct update first
   const { data, error: updateError } = await supabase
     .from('reservations')
     .update({ status: newStatus })
     .eq('id', reservation.id)
-    .select();
+    .select()
+    .single();
 
-  if (updateError) {
+  // If error or no data returned, log and throw
+  if (updateError || !data) {
     console.error('Error updating reservation status:', updateError);
-    throw updateError;
+    
+    // Try RPC call as fallback
+    console.log("Attempting update via RPC function");
+    const { data: rpcResult, error: rpcError } = await supabase
+      .rpc('update_reservation_status', { 
+        reservation_id: reservation.id, 
+        new_status: newStatus 
+      });
+    
+    if (rpcError || !rpcResult) {
+      console.error('RPC update failed:', rpcError);
+      throw new Error('Failed to update reservation status - no records were affected');
+    }
+    
+    console.log('RPC update successful:', rpcResult);
   }
 
-  console.log('Update response:', data);
-
-  // Then, send email notification (only for accepted or deleted)
+  // Send email notification (only for accepted or deleted)
   if (newStatus === 'accepted' || newStatus === 'deleted') {
     try {
       await supabase.functions.invoke('send-reservation-email', {
@@ -153,11 +169,13 @@ export const updateReservationStatus = async ({
           status: newStatus === 'accepted' ? 'accepted' : 'rejected'
         }
       });
+      console.log('Email notification sent successfully');
     } catch (emailError) {
       console.error('Email sending failed but update was successful:', emailError);
       // We don't throw here because the status update was successful
     }
   }
   
-  return { success: true, data };
+  console.log(`Successfully updated reservation to: ${newStatus}`);
+  return { success: true, data: data || { id: reservation.id, status: newStatus } };
 };

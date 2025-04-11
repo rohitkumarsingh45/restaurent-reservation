@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { format } from 'date-fns';
 import { Button } from "@/components/ui/button";
 import {
@@ -11,28 +11,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { MenuItemsList } from './MenuItemsList';
-
-interface Reservation {
-  id: string;
-  created_at: string;
-  date: string;
-  table_type: string;
-  name: string;
-  email: string;
-  phone?: string;
-  special_requests?: string;
-  status: 'pending' | 'accepted' | 'deleted' | 'expired';
-  menuItems?: {
-    id: string;
-    name: string;
-    price: number;
-    quantity: number;
-  }[];
-}
+import { ReservationWithMenuItems } from '@/types/reservations';
 
 interface ReservationsTableProps {
   activeTab: 'pending' | 'accepted' | 'deleted' | 'expired';
-  filteredReservations: Reservation[];
+  filteredReservations: ReservationWithMenuItems[];
   isLoading: boolean;
   updateReservationStatus: any;
 }
@@ -43,18 +26,35 @@ export const ReservationsTable: React.FC<ReservationsTableProps> = ({
   isLoading,
   updateReservationStatus
 }) => {
+  // Track which reservations are being processed
+  const [processingIds, setProcessingIds] = useState<Record<string, boolean>>({});
+
   const isPastDate = (dateString: string) => {
     const reservationDate = new Date(dateString);
     const currentDate = new Date();
     return reservationDate < currentDate;
   };
 
-  const handleStatusUpdate = (reservation: Reservation, newStatus: 'accepted' | 'deleted' | 'expired') => {
+  const handleStatusUpdate = (reservation: ReservationWithMenuItems, newStatus: 'accepted' | 'deleted' | 'expired') => {
     console.log(`ReservationsTable: Updating reservation ${reservation.id} from ${reservation.status} to ${newStatus}`);
-    updateReservationStatus.mutate({ 
-      reservation,
-      newStatus
-    });
+    
+    // Set processing state for this reservation
+    setProcessingIds(prev => ({ ...prev, [reservation.id]: true }));
+    
+    // Optimistic UI update
+    const optimisticUpdate = async () => {
+      try {
+        await updateReservationStatus.mutate({ 
+          reservation,
+          newStatus
+        });
+      } finally {
+        // Clear processing state regardless of outcome
+        setProcessingIds(prev => ({ ...prev, [reservation.id]: false }));
+      }
+    };
+    
+    optimisticUpdate();
   };
 
   if (isLoading) {
@@ -62,7 +62,6 @@ export const ReservationsTable: React.FC<ReservationsTableProps> = ({
   }
 
   console.log(`ReservationsTable: Rendering table with ${filteredReservations.length} reservations for ${activeTab} tab`);
-  console.log('Current filtered reservations:', filteredReservations);
 
   return (
     <Table>
@@ -106,17 +105,17 @@ export const ReservationsTable: React.FC<ReservationsTableProps> = ({
                       variant="success"
                       size="sm"
                       onClick={() => handleStatusUpdate(reservation, 'accepted')}
-                      disabled={updateReservationStatus.isPending}
+                      disabled={processingIds[reservation.id] || updateReservationStatus.isPending}
                     >
-                      Accept
+                      {processingIds[reservation.id] ? "Processing..." : "Accept"}
                     </Button>
                     <Button
                       variant="destructive"
                       size="sm"
                       onClick={() => handleStatusUpdate(reservation, 'deleted')}
-                      disabled={updateReservationStatus.isPending}
+                      disabled={processingIds[reservation.id] || updateReservationStatus.isPending}
                     >
-                      Delete
+                      {processingIds[reservation.id] ? "Processing..." : "Delete"}
                     </Button>
                   </div>
                 </TableCell>
@@ -128,18 +127,18 @@ export const ReservationsTable: React.FC<ReservationsTableProps> = ({
                       className="bg-orange-500 hover:bg-orange-600 text-white"
                       size="sm"
                       onClick={() => handleStatusUpdate(reservation, 'expired')}
-                      disabled={updateReservationStatus.isPending}
+                      disabled={processingIds[reservation.id] || updateReservationStatus.isPending}
                     >
-                      Mark Expired
+                      {processingIds[reservation.id] ? "Processing..." : "Mark Expired"}
                     </Button>
                   ) : (
                     <Button
                       variant="destructive"
                       size="sm"
                       onClick={() => handleStatusUpdate(reservation, 'deleted')}
-                      disabled={updateReservationStatus.isPending}
+                      disabled={processingIds[reservation.id] || updateReservationStatus.isPending}
                     >
-                      Cancel
+                      {processingIds[reservation.id] ? "Processing..." : "Cancel"}
                     </Button>
                   )}
                 </TableCell>
