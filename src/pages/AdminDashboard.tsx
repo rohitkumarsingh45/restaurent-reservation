@@ -16,19 +16,18 @@ const AdminDashboard = () => {
     filteredReservations,
     isLoading,
     error,
-    updateReservationStatus,
-    refetch
+    updateReservationStatus
   } = useReservations();
 
   // Check for expired reservations on component mount and tab change
   useEffect(() => {
-    console.log(`AdminDashboard: Tab changed to: ${activeTab}`);
-    // Refetch data when tab changes to ensure we have the latest data
-    refetch();
-  }, [activeTab, refetch]);
+    // This will trigger the check in the useReservations hook
+    if (activeTab === 'expired' || activeTab === 'accepted') {
+      // We can force a re-check here if needed
+    }
+  }, [activeTab]);
 
   if (error) {
-    console.error("Error loading reservations:", error);
     toast({
       title: "Error",
       description: "Failed to load reservations. Please try again.",
@@ -36,11 +35,6 @@ const AdminDashboard = () => {
     });
     return <div className="p-8">Error loading reservations. Please try again later.</div>;
   }
-
-  const handleTabChange = (value: string) => {
-    console.log(`Tab changing from ${activeTab} to ${value}`);
-    setActiveTab(value as 'pending' | 'accepted' | 'deleted' | 'expired');
-  };
 
   return (
     <div className="min-h-screen bg-background p-8">
@@ -58,7 +52,7 @@ const AdminDashboard = () => {
               value={activeTab}
               defaultValue="pending" 
               className="w-full" 
-              onValueChange={handleTabChange}
+              onValueChange={(value) => setActiveTab(value as 'pending' | 'accepted' | 'deleted' | 'expired')}
             >
               <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="pending">Pending</TabsTrigger>
@@ -68,7 +62,6 @@ const AdminDashboard = () => {
               </TabsList>
               <TabsContent value={activeTab}>
                 <ReservationsTable
-                  key={activeTab} // Force re-render when tab changes
                   activeTab={activeTab}
                   filteredReservations={filteredReservations}
                   isLoading={isLoading}

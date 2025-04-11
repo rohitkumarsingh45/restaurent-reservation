@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 
 interface MenuItem {
   id: string;
@@ -13,6 +13,10 @@ interface MenuItemsListProps {
 }
 
 export const MenuItemsList: React.FC<MenuItemsListProps> = ({ menuItems }) => {
+  useEffect(() => {
+    console.log('MenuItemsList received menuItems:', menuItems);
+  }, [menuItems]);
+
   if (!menuItems || menuItems.length === 0) return <span className="text-gray-500">None</span>;
   
   return (

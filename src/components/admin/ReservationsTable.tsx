@@ -44,12 +44,15 @@ export const ReservationsTable: React.FC<ReservationsTableProps> = ({
   isLoading,
   updateReservationStatus
 }) => {
+  console.log('ReservationsTable rendered with reservations:', filteredReservations);
+  
   const isPastDate = (dateString: string) => {
     const reservationDate = new Date(dateString);
     const currentDate = new Date();
     return reservationDate < currentDate;
   };
 
+<<<<<<< HEAD
   const handleStatusUpdate = (reservation: Reservation, newStatus: 'accepted' | 'deleted' | 'expired') => {
     updateReservationStatus.mutate({ 
       reservation,
@@ -57,6 +60,8 @@ export const ReservationsTable: React.FC<ReservationsTableProps> = ({
     });
   };
 
+=======
+>>>>>>> ba5141fc0c117f0972bcd7067395e77aa8fce5ed
   if (isLoading) {
     return <div className="text-center py-4 text-xl text-gray-500">Loading reservations...</div>;
   }
@@ -92,15 +97,19 @@ export const ReservationsTable: React.FC<ReservationsTableProps> = ({
               <TableCell>{reservation.phone || 'N/A'}</TableCell>
               <TableCell className="max-w-xs truncate">{reservation.special_requests || 'N/A'}</TableCell>
               <TableCell>
+                {console.log('Rendering MenuItemsList with:', reservation.menuItems)}
                 <MenuItemsList menuItems={reservation.menuItems} />
               </TableCell>
               {activeTab === 'pending' && (
                 <TableCell>
                   <div className="flex space-x-2">
                     <Button
-                      variant="success"
+                      className="bg-green-600 hover:bg-green-700 text-white"
                       size="sm"
-                      onClick={() => handleStatusUpdate(reservation, 'accepted')}
+                      onClick={() => updateReservationStatus.mutate({ 
+                        reservation,
+                        newStatus: 'accepted'
+                      })}
                       disabled={updateReservationStatus.isPending}
                       data-tip="Accept this reservation"
                     >
@@ -110,7 +119,10 @@ export const ReservationsTable: React.FC<ReservationsTableProps> = ({
                     <Button
                       variant="destructive"
                       size="sm"
-                      onClick={() => handleStatusUpdate(reservation, 'deleted')}
+                      onClick={() => updateReservationStatus.mutate({ 
+                        reservation,
+                        newStatus: 'deleted'
+                      })}
                       disabled={updateReservationStatus.isPending}
                       data-tip="Delete this reservation"
                     >
@@ -126,7 +138,10 @@ export const ReservationsTable: React.FC<ReservationsTableProps> = ({
                     <Button
                       className="bg-orange-500 hover:bg-orange-600 text-white"
                       size="sm"
-                      onClick={() => handleStatusUpdate(reservation, 'expired')}
+                      onClick={() => updateReservationStatus.mutate({ 
+                        reservation,
+                        newStatus: 'expired'
+                      })}
                       disabled={updateReservationStatus.isPending}
                       data-tip="Mark this reservation as expired"
                     >
@@ -137,7 +152,10 @@ export const ReservationsTable: React.FC<ReservationsTableProps> = ({
                     <Button
                       variant="destructive"
                       size="sm"
-                      onClick={() => handleStatusUpdate(reservation, 'deleted')}
+                      onClick={() => updateReservationStatus.mutate({ 
+                        reservation,
+                        newStatus: 'deleted'
+                      })}
                       disabled={updateReservationStatus.isPending}
                       data-tip="Cancel this reservation"
                     >
