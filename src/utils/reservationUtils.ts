@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { QueryClient } from '@tanstack/react-query';
 
@@ -61,107 +60,96 @@ export const fetchReservations = async () => {
 
   console.log(`Retrieved ${reservationsData?.length || 0} reservations`);
 
-  // Debug the reservation_menu_items table to check if there's data
-  const { data: debugData, error: debugError } = await supabase
-    .from('reservation_menu_items')
-    .select('*');
+  // Get all menu items to use for lookups
+  const { data: allMenuItems, error: menuError } = await supabase
+    .from('menu_items')
+    .select('id, name, price');
     
-  if (debugError) {
-    console.error('Error checking reservation_menu_items table:', debugError);
+  if (menuError) {
+    console.error('Error fetching all menu items:', menuError);
+    console.log('Continuing without menu items data');
   } else {
-    console.log(`Debug: reservation_menu_items table has ${debugData?.length || 0} entries`);
-    if (debugData && debugData.length > 0) {
-      console.log('Sample reservation_menu_items entry:', debugData[0]);
+    console.log(`Retrieved ${allMenuItems?.length || 0} menu items for lookup`);
+    if (allMenuItems && allMenuItems.length > 0) {
+      console.log('Sample menu item:', allMenuItems[0]);
     }
   }
 
-  // Get all reservation menu items with full menu item details
-  const { data: menuItemsData, error: menuItemsError } = await supabase
-    .from('reservation_menu_items')
-    .select(`
-      id,
-      reservation_id,
-      menu_item_id,
-      quantity,
-      menu_items:menu_item_id (id, name, price)
-    `);
-
-  if (menuItemsError) {
-    console.error('Error fetching menu items:', menuItemsError);
-    throw menuItemsError;
+  // Create a lookup map for menu items by ID for faster access
+  const menuItemsMap = new Map();
+  if (allMenuItems) {
+    allMenuItems.forEach(item => {
+      menuItemsMap.set(item.id, item);
+    });
+    console.log(`Created lookup map with ${menuItemsMap.size} menu items`);
   }
 
-  console.log(`Retrieved ${menuItemsData?.length || 0} menu items`);
+  // Get all reservation menu items
+  const { data: reservationMenuItems, error: reservationMenuItemsError } = await supabase
+    .from('reservation_menu_items')
+    .select('*');
+
+  if (reservationMenuItemsError) {
+    console.error('Error fetching reservation menu items:', reservationMenuItemsError);
+    throw reservationMenuItemsError;
+  }
+
+  console.log(`Retrieved ${reservationMenuItems?.length || 0} reservation menu items`);
   
-  // Enhanced logging to debug menu items structure
-  if (menuItemsData && menuItemsData.length > 0) {
-    console.log('Sample menu item data structure:', JSON.stringify(menuItemsData[0], null, 2));
-    console.log('Menu items field type:', typeof menuItemsData[0].menu_items);
-    console.log('Is menu_items an array?', Array.isArray(menuItemsData[0].menu_items));
-    
-    // New detailed logging to understand the exact structure
-    const menuItemsSample = menuItemsData[0].menu_items;
-    console.log('Menu items detailed inspection:', {
-      value: menuItemsSample,
-      type: typeof menuItemsSample,
-      isArray: Array.isArray(menuItemsSample),
-      keys: menuItemsSample ? Object.keys(menuItemsSample) : [],
-      prototype: menuItemsSample ? Object.getPrototypeOf(menuItemsSample) : null
-    });
+  if (reservationMenuItems && reservationMenuItems.length > 0) {
+    console.log('Sample reservation menu item:', reservationMenuItems[0]);
   }
 
   // Combine the data
   const reservationsWithMenuItems = reservationsData.map((reservation) => {
     // Filter menu items for this reservation
-    const reservationMenuItems = menuItemsData
+    const menuItemsForThisReservation = reservationMenuItems
       .filter((mi) => mi.reservation_id === reservation.id)
       .map((mi) => {
-        // Safely extract menu item data with better type handling
-        const menuItemData = mi.menu_items;
+        // Look up the menu item details using our map
+        const menuItem = menuItemsMap.get(mi.menu_item_id);
         
-        // Initialize default values
-        let menuItemName = 'Unknown Item';
-        let menuItemPrice = 0;
-        let menuItemId = mi.menu_item_id;
-        
-        // Handle different data structures more carefully
-        if (menuItemData) {
-          if (Array.isArray(menuItemData)) {
-            // If it's an array, use the first item
-            if (menuItemData.length > 0) {
-              const firstItem = menuItemData[0];
-              menuItemName = firstItem?.name || 'Unknown Item';
-              menuItemPrice = firstItem?.price || 0;
-            }
-          } else if (typeof menuItemData === 'object') {
-            // If it's an object, use directly
-            // Use type assertion to tell TypeScript this is a valid menu item
-            const menuItem = menuItemData as unknown as { id?: string; name?: string; price?: number };
-            menuItemName = menuItem?.name || 'Unknown Item';
-            menuItemPrice = menuItem?.price || 0;
-          }
+        if (menuItem) {
+          return {
+            id: menuItem.id,
+            name: menuItem.name,
+            price: menuItem.price,
+            quantity: mi.quantity || 1
+          };
+        } else {
+          console.log(`Menu item not found for ID: ${mi.menu_item_id}`);
+          // Fallback for missing menu items
+          return {
+            id: mi.menu_item_id,
+            name: 'Unknown Item',
+            price: 0,
+            quantity: mi.quantity || 1
+          };
         }
-        
-        return {
-          id: menuItemId,
-          name: menuItemName,
-          price: menuItemPrice,
-          quantity: mi.quantity || 1
-        };
       });
 
     return {
       ...reservation,
       status: reservation.status || 'pending',
-      menuItems: reservationMenuItems.length > 0 ? reservationMenuItems : undefined
+      menuItems: menuItemsForThisReservation.length > 0 ? menuItemsForThisReservation : undefined
     };
   });
 
-  console.log('Processed reservations with menu items sample:', 
-    reservationsWithMenuItems.length > 0 ? 
-      JSON.stringify(reservationsWithMenuItems[0], null, 2) : 
-      'No reservations found'
-  );
+  console.log('Processed reservations with menu items:');
+  if (reservationsWithMenuItems.length > 0) {
+    const sampleReservation = reservationsWithMenuItems[0];
+    console.log('Sample reservation:', {
+      id: sampleReservation.id,
+      name: sampleReservation.name,
+      status: sampleReservation.status,
+      hasMenuItems: !!sampleReservation.menuItems,
+      menuItemsCount: sampleReservation.menuItems?.length || 0
+    });
+    
+    if (sampleReservation.menuItems && sampleReservation.menuItems.length > 0) {
+      console.log('Sample menu items:', sampleReservation.menuItems);
+    }
+  }
 
   return reservationsWithMenuItems;
 };
