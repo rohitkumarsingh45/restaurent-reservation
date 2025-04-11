@@ -90,13 +90,13 @@ export const fetchReservations = async () => {
     const reservationMenuItems = menuItemsData
       .filter((mi) => mi.reservation_id === reservation.id)
       .map((mi) => {
-        // Extract menu item details
+        // Extract menu item details - Fix: Properly access menu_items which is a single object, not an array
         const menuItem = mi.menu_items;
         
         return {
           id: mi.menu_item_id,
-          name: menuItem?.name || 'Unknown Item', // Fixed: Access name from menuItem object
-          price: menuItem?.price || 0, // Fixed: Access price from menuItem object
+          name: menuItem ? menuItem.name || 'Unknown Item' : 'Unknown Item',
+          price: menuItem ? menuItem.price || 0 : 0,
           quantity: mi.quantity || 1
         };
       });
