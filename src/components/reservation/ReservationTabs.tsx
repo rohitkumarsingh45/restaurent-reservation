@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -51,9 +50,17 @@ const ReservationTabs: React.FC<ReservationTabsProps> = ({
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab}>
-      <TabsList className="grid w-full grid-cols-2 mb-6">
-        <TabsTrigger value="reservation">Reservation Details</TabsTrigger>
-        <TabsTrigger value="menu-items" className="relative">
+      <TabsList className="grid w-full grid-cols-2 mb-6 bg-gradient-to-r from-primary to-secondary p-2 rounded-lg shadow-lg">
+        <TabsTrigger 
+          value="reservation" 
+          className="text-lg font-semibold text-white hover:text-primary transition-colors duration-300 py-2 px-4 rounded-lg cursor-pointer"
+        >
+          Reservation Details
+        </TabsTrigger>
+        <TabsTrigger 
+          value="menu-items" 
+          className="relative text-lg font-semibold text-white hover:text-primary transition-colors duration-300 py-2 px-4 rounded-lg cursor-pointer"
+        >
           Pre-Order Menu
           {totalMenuItemsQuantity > 0 && (
             <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
@@ -63,7 +70,7 @@ const ReservationTabs: React.FC<ReservationTabsProps> = ({
         </TabsTrigger>
       </TabsList>
       
-      <TabsContent value="reservation" className="mt-0">
+      <TabsContent value="reservation" className="mt-6 p-6 bg-white rounded-xl shadow-lg">
         <div className="grid gap-6 md:grid-cols-2">
           <ReservationCalendar date={date} setDate={setDate} />
           <TableSelection 
@@ -86,7 +93,7 @@ const ReservationTabs: React.FC<ReservationTabsProps> = ({
         />
       </TabsContent>
       
-      <TabsContent value="menu-items" className="mt-0">
+      <TabsContent value="menu-items" className="mt-6 p-6 bg-white rounded-xl shadow-lg">
         <MenuItemSelection 
           selectedItems={selectedMenuItems}
           onUpdateSelectedItems={handleMenuItemsUpdate}
@@ -96,7 +103,7 @@ const ReservationTabs: React.FC<ReservationTabsProps> = ({
           <Button
             type="button"
             variant="outline"
-            className="w-full mb-2 border-primary text-primary hover:bg-primary/10"
+            className="w-full mb-2 border-primary text-primary hover:bg-primary/10 transition-colors duration-300"
             onClick={() => setActiveTab("reservation")}
           >
             Back to Reservation Details

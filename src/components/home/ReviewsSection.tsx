@@ -11,12 +11,12 @@ interface Review {
 const ReviewsSection = () => {
   const reviews: Review[] = [
     {
-      name: "John Doe",
+      name: "Mr.Singh",
       rating: 5,
       comment: "Exceptional dining experience! The atmosphere and service were impeccable."
     },
     {
-      name: "Jane Smith",
+      name: "kumar Smith",
       rating: 5,
       comment: "The best fine dining restaurant in the city. Every dish was a masterpiece."
     },
@@ -24,7 +24,19 @@ const ReviewsSection = () => {
       name: "Mike Johnson",
       rating: 5,
       comment: "Outstanding service and amazing food. Will definitely come back!"
-    }
+    },
+    {
+      name: "Aisha Verma",
+      rating: 5,
+      comment: "A delightful culinary journey! The flavors were perfectly balanced."
+    },
+    {
+      name: "Rahul Mehta",
+      rating: 5,
+      comment: "Truly a gem! Elegant ambiance and delicious food. Highly recommended."
+    },
+   
+    
   ];
   
   return (

@@ -8,7 +8,7 @@ const RestaurantFooter = () => {
       <div className="container mx-auto px-4">
         <div className="grid gap-8 md:grid-cols-3">
           <div>
-            <h3 className="text-xl font-semibold mb-4">La Belle Cuisine</h3>
+            <h3 className="text-xl font-semibold mb-4">Namaste Bharat</h3>
             <p className="text-gray-400">Experience the finest dining in an elegant atmosphere.</p>
           </div>
           <div>
@@ -16,15 +16,17 @@ const RestaurantFooter = () => {
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <MapPin className="w-5 h-5" />
-                <p>123 Gourmet Street, Foodie City</p>
+                <p>123 Gopalganj Bihar, Foodie City</p>
               </div>
               <div className="flex items-center gap-2">
                 <Phone className="w-5 h-5" />
-                <p>+1 (555) 123-4567</p>
+                <p>+91 8340178854</p>
+                <br />
+                <p>+91 8229862783</p>
               </div>
               <div className="flex items-center gap-2">
                 <Mail className="w-5 h-5" />
-                <p>info@labellecuisine.com</p>
+                <p>namastebharat.info.com</p>
               </div>
             </div>
           </div>
@@ -38,7 +40,7 @@ const RestaurantFooter = () => {
           </div>
         </div>
         <div className="border-t border-gray-800 mt-8 pt-8 text-center">
-          <p>&copy; 2024 La Belle Cuisine. All rights reserved.</p>
+          <p>&copy; 2025 Namaste Bharat . All rights reserved.</p>
         </div>
       </div>
     </footer>
